@@ -1,10 +1,40 @@
-HELP.md
+### Java / Maven ###
 target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+out/
+*.class
+*.log
+*.jar
+*.war
+*.ear
+hs_err_pid*
 
-### STS ###
+### Maven wrapper ###
+.mvn/
+mvnw
+mvnw.cmd
+
+### Logs ###
+logs/
+*.log
+
+### Environment ###
+.env
+
+### macOS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+
+### IntelliJ IDEA ###
+.idea/
+*.iml
+*.ipr
+*.iws
+
+### VS Code ###
+.vscode/
+
+### Eclipse / STS ###
 .apt_generated
 .classpath
 .factorypath
@@ -13,12 +43,6 @@ target/
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
@@ -26,9 +50,3 @@ target/
 /nbdist/
 /.nb-gradle/
 build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
-.vscode/
-.env
