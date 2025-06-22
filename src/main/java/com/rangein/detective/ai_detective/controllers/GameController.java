@@ -29,7 +29,7 @@ public class GameController {
     @PostMapping("/messages")
     @SneakyThrows
     public ResponseEntity<MessageDto> sendMessage(@RequestBody SendMessageRequestDto requestDto) {
-        return ResponseEntity.ok(gameService.sendMessage(requestDto).get());
+        return ResponseEntity.ok(gameService.sendMessage(requestDto));
     }
 
 

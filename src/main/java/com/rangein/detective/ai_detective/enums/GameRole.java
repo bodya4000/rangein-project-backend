@@ -1,8 +1,8 @@
 package com.rangein.detective.ai_detective.enums;
 
 public enum GameRole {
-    RULE_MASTER,
-    STORYTELLER,
-    ASSISTANT_AI,
-    DETECTIVE
+    SYSTEM_BACKEND,
+    STORYTELLER_AI,
+    DETECTIVE_ASSISTANT_AI,
+    DETECTIVE_USER
 }
