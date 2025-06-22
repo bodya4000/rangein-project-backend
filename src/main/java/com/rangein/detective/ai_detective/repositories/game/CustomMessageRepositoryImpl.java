@@ -1,0 +1,33 @@
+package com.rangein.detective.ai_detective.repositories.game;
+
+import com.rangein.detective.ai_detective.dtos.game.MessageDto;
+import com.rangein.detective.ai_detective.enums.GameRole;
+import com.rangein.detective.ai_detective.models.Game;
+import com.rangein.detective.ai_detective.models.Message;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
+
+import java.time.Instant;
+
+@Repository
+@RequiredArgsConstructor
+public class CustomMessageRepositoryImpl implements CustomMessageRepository {
+
+    private final EntityManager entityManager;
+
+    @Override
+    @Transactional
+    public MessageDto saveMessageToGame(String message, GameRole gameRole,  Game game) {
+        var messageEntity = Message.builder()
+                .message(message)
+                .role(gameRole)
+                .timestamp(Instant.now())
+                .game(game)
+                .build();
+        entityManager.persist(messageEntity);
+        entityManager.flush();
+        return new MessageDto(messageEntity.getMessageId(), messageEntity.getRole(), messageEntity.getMessage());
+    }
+}
