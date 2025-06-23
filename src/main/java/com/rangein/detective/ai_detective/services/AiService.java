@@ -2,6 +2,7 @@ package com.rangein.detective.ai_detective.services;
 
 
 import com.rangein.detective.ai_detective.dtos.game.AiMessageDto;
+import com.rangein.detective.ai_detective.dtos.game.AiSetupResponse;
 import com.rangein.detective.ai_detective.dtos.game.DetectiveStoryDto;
 import com.rangein.detective.ai_detective.dtos.game.GameSetupInfoDto;
 import com.rangein.detective.ai_detective.contants.AiConstants;
@@ -20,12 +21,12 @@ public class AiService {
 
 
     public GameSetupInfoDto setupStory() {
-        DetectiveStoryDto detectiveStory = gptModel.setupCrimeStory();
+        AiSetupResponse detectiveStory = gptModel.setupCrimeStory();
         int randomIndex = (int) (Math.random() * AiConstants.ASSISTANT_INTROS.size());
-        String assistantIntro = detectiveStory.parts().get(randomIndex);
+        String assistantIntro = AiConstants.ASSISTANT_INTROS.get(randomIndex);
         return new GameSetupInfoDto(
-                detectiveStory,
-                new AiMessageDto(GameRole.DETECTIVE_ASSISTANT_AI,assistantIntro));
+                new DetectiveStoryDto(detectiveStory.title(), detectiveStory.parts()),
+                new AiMessageDto(GameRole.DETECTIVE_ASSISTANT_AI,assistantIntro, detectiveStory.options()));
     }
 
 

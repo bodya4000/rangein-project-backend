@@ -6,6 +6,7 @@ import com.openai.client.OpenAIClient;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
 import com.rangein.detective.ai_detective.contants.AiConstants;
 import com.rangein.detective.ai_detective.dtos.game.AiMessageDto;
+import com.rangein.detective.ai_detective.dtos.game.AiSetupResponse;
 import com.rangein.detective.ai_detective.dtos.game.DetectiveStoryDto;
 import com.rangein.detective.ai_detective.enums.GameRole;
 import lombok.RequiredArgsConstructor;
@@ -25,10 +26,11 @@ public class GptModel {
         String request = gson.toJson(wholeMessageHistory);
         String rawResponse = requestMessage(request);
         String cleaned = cleanGptResponse(rawResponse);
-        return new AiMessageDto(GameRole.DETECTIVE_ASSISTANT_AI, cleaned);
+        AiMessageDto aiMessageData = gson.fromJson(cleaned, AiMessageDto.class);
+        return new AiMessageDto(GameRole.DETECTIVE_ASSISTANT_AI, aiMessageData.message(), aiMessageData.options());
     }
 
-    public DetectiveStoryDto setupCrimeStory() {
+    public AiSetupResponse setupCrimeStory() {
         String rawResponse = requestMessage(AiConstants.START_PROMPT);
         String cleaned = cleanGptResponse(rawResponse);
         return parseJsonStory(cleaned);
@@ -52,9 +54,9 @@ public class GptModel {
     }
 
     @SneakyThrows
-    private DetectiveStoryDto parseJsonStory(String json) {
+    private AiSetupResponse parseJsonStory(String json) {
         try {
-            return gson.fromJson(json, DetectiveStoryDto.class);
+            return gson.fromJson(json, AiSetupResponse.class);
         } catch (JsonSyntaxException e) {
             throw new RuntimeException("Failed to parse GPT story JSON: " + json, e);
         }

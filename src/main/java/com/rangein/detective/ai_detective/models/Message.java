@@ -34,13 +34,4 @@ public class Message {
     @JoinColumn(name = "game_id")
     private Game game;
 
-
-    public MessageDto toMessageDto() {
-        return new MessageDto(messageId, role, message);
-    }
-
-    public AiMessageDto toAiMessageDto() {
-        return new AiMessageDto(role, message);
-    }
-
 }

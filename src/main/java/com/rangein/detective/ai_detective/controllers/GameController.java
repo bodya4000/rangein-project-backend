@@ -2,6 +2,7 @@ package com.rangein.detective.ai_detective.controllers;
 
 import com.rangein.detective.ai_detective.dtos.game.MessageDto;
 import com.rangein.detective.ai_detective.dtos.game.SendMessageRequestDto;
+import com.rangein.detective.ai_detective.dtos.game.SendMessageResponseDto;
 import com.rangein.detective.ai_detective.dtos.game.SetupResponseDto;
 import com.rangein.detective.ai_detective.services.GameService;
 import lombok.RequiredArgsConstructor;
@@ -21,14 +22,21 @@ public class GameController {
     private final GameService gameService;
 
     @PostMapping("/user/{userId}")
-    public ResponseEntity<SetupResponseDto> getForUserGame(@PathVariable String userId) {
+    public ResponseEntity<SetupResponseDto> setupGame(@PathVariable String userId) {
         System.out.println("Getting game for user:");
         return ResponseEntity.ok(gameService.setup(userId));
     }
 
+    @PostMapping("/{gameId}")
+    public ResponseEntity<SetupResponseDto> getGameInfo(@PathVariable String gameId) {
+        System.out.println("Setting up game for user:");
+        return ResponseEntity.ok(gameService.getGameInfo(gameId));
+    }
+
+
     @PostMapping("/messages")
     @SneakyThrows
-    public ResponseEntity<MessageDto> sendMessage(@RequestBody SendMessageRequestDto requestDto) {
+    public ResponseEntity<SendMessageResponseDto> sendMessage(@RequestBody SendMessageRequestDto requestDto) {
         return ResponseEntity.ok(gameService.sendMessage(requestDto));
     }
 
