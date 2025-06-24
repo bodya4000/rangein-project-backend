@@ -57,7 +57,7 @@ public class GameService {
         var messageHistoryForAi = messageRepository.findAllMessages(requestDto.gameId());
         var userMessage = new MessageDto(GameRole.DETECTIVE_USER, requestDto.message());
         var aiMessageDto = aiService.talkToAssistant(new AiMessageRequestDto(messageHistoryForAi, userMessage));
-
+        game.setOptions(aiMessageDto.options());
         messageRepository.saveMessageToGame(requestDto.message(), GameRole.DETECTIVE_USER, game);
         var message = messageRepository.saveMessageToGame(aiMessageDto.message(), aiMessageDto.role(), game);
         return new ReplyMessageDto(

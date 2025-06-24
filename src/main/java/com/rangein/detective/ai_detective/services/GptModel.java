@@ -27,6 +27,7 @@ public class GptModel {
         String rawResponse = requestMessage(request);
         String cleaned = cleanGptResponse(rawResponse);
         AiMessageResponseDto aiMessageData = gson.fromJson(cleaned, AiMessageResponseDto.class);
+        System.out.println(aiMessageData);
         return new AiMessageResponseDto(GameRole.DETECTIVE_ASSISTANT_AI, aiMessageData.message(), aiMessageData.options());
     }
 
