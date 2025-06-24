@@ -1,12 +1,12 @@
 package com.rangein.detective.ai_detective.services;
 
 
-import com.rangein.detective.ai_detective.dtos.game.AiMessageDto;
-import com.rangein.detective.ai_detective.dtos.game.AiSetupResponse;
-import com.rangein.detective.ai_detective.dtos.game.DetectiveStoryDto;
-import com.rangein.detective.ai_detective.dtos.game.GameSetupInfoDto;
+import com.rangein.detective.ai_detective.dtos.services.DetectiveStoryDto;
+import com.rangein.detective.ai_detective.dtos.services.GameSetupInfoDto;
+import com.rangein.detective.ai_detective.dtos.services.ai.AiMessageRequestDto;
+import com.rangein.detective.ai_detective.dtos.services.ai.AiMessageResponseDto;
+import com.rangein.detective.ai_detective.dtos.services.ai.AiSetupStoryResponseDto;
 import com.rangein.detective.ai_detective.contants.AiConstants;
-import com.rangein.detective.ai_detective.enums.GameRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,19 +19,21 @@ public class AiService {
 
     private final GptModel gptModel;
 
-
     public GameSetupInfoDto setupStory() {
-        AiSetupResponse detectiveStory = gptModel.setupCrimeStory();
+        AiSetupStoryResponseDto detectiveStory = gptModel.setupCrimeStory();
         int randomIndex = (int) (Math.random() * AiConstants.ASSISTANT_INTROS.size());
         String assistantIntro = AiConstants.ASSISTANT_INTROS.get(randomIndex);
         return new GameSetupInfoDto(
                 new DetectiveStoryDto(detectiveStory.title(), detectiveStory.parts()),
-                new AiMessageDto(GameRole.DETECTIVE_ASSISTANT_AI,assistantIntro, detectiveStory.options()));
+                assistantIntro,
+                detectiveStory.options());
     }
 
 
-    public AiMessageDto talkToAssistant(List<AiMessageDto> messageHistory) {
-       return gptModel.talkToAssistant(messageHistory);
+    public AiMessageResponseDto talkToAssistant(AiMessageRequestDto messageRequestDto) {
+        var messageHistory = messageRequestDto.messages();
+        messageHistory.add(messageRequestDto.userMessage());
+        return gptModel.talkToAssistant(messageHistory);
     }
 
 }

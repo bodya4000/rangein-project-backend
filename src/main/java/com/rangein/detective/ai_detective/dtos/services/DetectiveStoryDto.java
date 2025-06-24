@@ -1,4 +1,4 @@
-package com.rangein.detective.ai_detective.dtos.game;
+package com.rangein.detective.ai_detective.dtos.services;
 
 import java.util.List;
 

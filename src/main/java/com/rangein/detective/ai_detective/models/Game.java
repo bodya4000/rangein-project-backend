@@ -45,4 +45,8 @@ public class Game {
     private List<String> story;
 
 
+    @Column(columnDefinition = "jsonb")
+    @Convert(converter = StringListConverter.class)
+    @ColumnTransformer(write = "?::jsonb")
+    private List<String> options;
 }

@@ -8,8 +8,9 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS games (
                                      game_id VARCHAR(255) NOT NULL,
                                      user_id VARCHAR(255),
-                                     title VARCHAR(255),
-                                     story JSONB,
+                                     title   VARCHAR(255),
+                                     story   JSONB,
+                                     options JSONB,
                                      CONSTRAINT pk_games PRIMARY KEY (game_id)
 );
 

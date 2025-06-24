@@ -5,9 +5,9 @@ import com.google.gson.JsonSyntaxException;
 import com.openai.client.OpenAIClient;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
 import com.rangein.detective.ai_detective.contants.AiConstants;
-import com.rangein.detective.ai_detective.dtos.game.AiMessageDto;
-import com.rangein.detective.ai_detective.dtos.game.AiSetupResponse;
-import com.rangein.detective.ai_detective.dtos.game.DetectiveStoryDto;
+import com.rangein.detective.ai_detective.dtos.repositories.MessageDto;
+import com.rangein.detective.ai_detective.dtos.services.ai.AiMessageResponseDto;
+import com.rangein.detective.ai_detective.dtos.services.ai.AiSetupStoryResponseDto;
 import com.rangein.detective.ai_detective.enums.GameRole;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -22,15 +22,15 @@ public class GptModel {
     private final OpenAIClient openAIClient;
     private final Gson gson;
 
-    public AiMessageDto talkToAssistant(List<AiMessageDto> wholeMessageHistory) {
+    public AiMessageResponseDto talkToAssistant(List<MessageDto> wholeMessageHistory) {
         String request = gson.toJson(wholeMessageHistory);
         String rawResponse = requestMessage(request);
         String cleaned = cleanGptResponse(rawResponse);
-        AiMessageDto aiMessageData = gson.fromJson(cleaned, AiMessageDto.class);
-        return new AiMessageDto(GameRole.DETECTIVE_ASSISTANT_AI, aiMessageData.message(), aiMessageData.options());
+        AiMessageResponseDto aiMessageData = gson.fromJson(cleaned, AiMessageResponseDto.class);
+        return new AiMessageResponseDto(GameRole.DETECTIVE_ASSISTANT_AI, aiMessageData.message(), aiMessageData.options());
     }
 
-    public AiSetupResponse setupCrimeStory() {
+    public AiSetupStoryResponseDto setupCrimeStory() {
         String rawResponse = requestMessage(AiConstants.START_PROMPT);
         String cleaned = cleanGptResponse(rawResponse);
         return parseJsonStory(cleaned);
@@ -54,9 +54,9 @@ public class GptModel {
     }
 
     @SneakyThrows
-    private AiSetupResponse parseJsonStory(String json) {
+    private AiSetupStoryResponseDto parseJsonStory(String json) {
         try {
-            return gson.fromJson(json, AiSetupResponse.class);
+            return gson.fromJson(json, AiSetupStoryResponseDto.class);
         } catch (JsonSyntaxException e) {
             throw new RuntimeException("Failed to parse GPT story JSON: " + json, e);
         }

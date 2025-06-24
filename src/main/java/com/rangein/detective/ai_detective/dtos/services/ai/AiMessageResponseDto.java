@@ -1,11 +1,10 @@
-package com.rangein.detective.ai_detective.dtos.game;
+package com.rangein.detective.ai_detective.dtos.services.ai;
 
 import com.rangein.detective.ai_detective.enums.GameRole;
 
 import java.util.List;
 
-public record SendMessageResponseDto(
-        String messageId,
+public record AiMessageResponseDto(
         GameRole role,
         String message,
         List<String> options

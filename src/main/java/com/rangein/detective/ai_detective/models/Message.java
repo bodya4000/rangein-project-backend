@@ -1,7 +1,5 @@
 package com.rangein.detective.ai_detective.models;
 
-import com.rangein.detective.ai_detective.dtos.game.AiMessageDto;
-import com.rangein.detective.ai_detective.dtos.game.MessageDto;
 import com.rangein.detective.ai_detective.enums.GameRole;
 import jakarta.persistence.*;
 import lombok.*;

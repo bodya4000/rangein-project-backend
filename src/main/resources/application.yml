@@ -2,10 +2,6 @@ spring:
   application:
     name: ai-detective
 
-  mvc:
-    servlet:
-      path: /api
-
 
   datasource:
     url: jdbc:postgresql://localhost:5432/ai_detective
