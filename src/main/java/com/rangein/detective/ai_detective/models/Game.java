@@ -34,7 +34,8 @@ public class Game {
     private User user;
 
     @Builder.Default
-    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL,fetch = FetchType.LAZY, orphanRemoval = true)
+    @OrderBy("timestamp DESC")
     private List<Message> messages = new java.util.ArrayList<>();
 
     private String title;

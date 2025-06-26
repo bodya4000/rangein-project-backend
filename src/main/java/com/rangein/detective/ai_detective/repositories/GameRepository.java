@@ -12,7 +12,7 @@ public interface GameRepository extends JpaRepository<Game, String> {
     SELECT g FROM Game g
     LEFT JOIN FETCH g.messages
     WHERE g.gameId = ?1
-    """)
+""")
     Optional<Game> findByIdWithMessageHistory(String gameId);
 
 }

@@ -20,7 +20,7 @@ public interface MessageRepository extends JpaRepository<Message, String>, Custo
     WHERE m.game.gameId = :gameId
         AND m.role != com.rangein.detective.ai_detective.enums.GameRole.SYSTEM_BACKEND
         AND m.role != com.rangein.detective.ai_detective.enums.GameRole.STORYTELLER_AI
-    ORDER BY m.timestamp
+    ORDER BY m.timestamp DESC
     """)
     Page<MessageWithIdDto> findPaginatedMessageHistoryByGameId(String gameId, Pageable pageable);
 
