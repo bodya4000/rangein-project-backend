@@ -1,5 +1,7 @@
 package com.rangein.detective.ai_detective.models;
 
+import com.rangein.detective.ai_detective.dtos.services.GameState;
+import com.rangein.detective.ai_detective.enums.GameResult;
 import com.rangein.detective.ai_detective.utils.StringListConverter;
 import org.hibernate.annotations.ColumnTransformer;
 import jakarta.persistence.*;
@@ -13,6 +15,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.Type;
+import com.vladmihalcea.hibernate.type.json.JsonType;
 
 
 @Entity
@@ -27,6 +31,7 @@ public class Game {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "uuid2")
+
     private String gameId;
 
     @ManyToOne
@@ -50,4 +55,13 @@ public class Game {
     @Convert(converter = StringListConverter.class)
     @ColumnTransformer(write = "?::jsonb")
     private List<String> options;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private GameState gameState;
+
+    private Boolean finished = false;
+
+    @Enumerated(EnumType.ORDINAL)
+    private GameResult score;
 }

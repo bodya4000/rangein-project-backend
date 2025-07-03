@@ -5,15 +5,13 @@ import com.google.gson.JsonSyntaxException;
 import com.openai.client.OpenAIClient;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
 import com.rangein.detective.ai_detective.contants.AiConstants;
-import com.rangein.detective.ai_detective.dtos.repositories.MessageDto;
-import com.rangein.detective.ai_detective.dtos.services.ai.AiMessageResponseDto;
-import com.rangein.detective.ai_detective.dtos.services.ai.AiSetupStoryResponseDto;
-import com.rangein.detective.ai_detective.enums.GameRole;
+import com.rangein.detective.ai_detective.dtos.services.*;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -22,20 +20,86 @@ public class GptModel {
     private final OpenAIClient openAIClient;
     private final Gson gson;
 
-    public AiMessageResponseDto talkToAssistant(List<MessageDto> wholeMessageHistory) {
-        String request = gson.toJson(wholeMessageHistory);
-        String rawResponse = requestMessage(request);
-        String cleaned = cleanGptResponse(rawResponse);
-        AiMessageResponseDto aiMessageData = gson.fromJson(cleaned, AiMessageResponseDto.class);
-        System.out.println(aiMessageData);
-        return new AiMessageResponseDto(GameRole.DETECTIVE_ASSISTANT_AI, aiMessageData.message(), aiMessageData.options());
+//    public GameUpdate talkToAssistant(AiMessageRequest messageRequestDto) {
+//        String request = gson.toJson(messageRequestDto);
+//        System.out.println(request);
+//        String rawResponse = requestMessage(request);
+//        System.out.println(rawResponse);
+//        String cleaned = cleanGptResponse(rawResponse);
+//        GameUpdate aiMessageData = gson.fromJson(cleaned, GameUpdate.class);
+//        System.out.println(aiMessageData);
+//        return aiMessageData;
+//    }
+
+    public GameUpdate talkToAssistant(AiMessageRequest messageRequestDto) {
+        return new GameUpdate(
+                "‘You sure about that?’ Rosa narrowed her eyes.",
+                List.of(
+                        "Rosa slammed the photo on the table.",
+                        "'That's your guy,' she said, lighting a cigarette.",
+                        "I flipped it over — scrawled date, smeared blood.",
+                        "‘Why now?’ I asked. ‘Why here?’",
+                        "The ceiling fan hummed like a clock counting down."
+                ),
+                List.of(
+                        "Interrogate suspect",
+                        "Examine photo",
+                        "Smell cigarette"
+                ),
+                new GameState(
+                        "interrogation_room",
+                        List.of(
+                                new SuspectJson("Vinny Black", "tense"),
+                                new SuspectJson("Rosa Vane", "calm")
+                        ),
+                        List.of("blood-stained photo", "suspect alibi"),
+                        List.of("break Vinny", "verify photo origin"),
+                        "Inside job by Vinny",
+                        "Vinny Black"
+                ),
+                false,
+                true
+        );
     }
 
-    public AiSetupStoryResponseDto setupCrimeStory() {
-        String rawResponse = requestMessage(AiConstants.START_PROMPT);
-        String cleaned = cleanGptResponse(rawResponse);
-        return parseJsonStory(cleaned);
-    }
+//    public GameOverview setupCrimeStory() throws JsonProcessingException {
+//        String rawResponse = requestMessage(AiConstants.START_PROMPT);
+//        ObjectMapper mapper = new ObjectMapper();
+//        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+//        String prettyJson = writer.writeValueAsString(mapper.readTree(rawResponse));
+//        System.out.println(prettyJson);
+//        String cleaned = cleanGptResponse(rawResponse);
+//        return parseJsonStory(cleaned);
+//    }
+public GameSetup setupCrimeStory() {
+    List<SuspectJson> suspects = List.of(
+            new SuspectJson("Vinny Black", "anxious"),
+            new SuspectJson("Lydia Kane", "cold")
+    );
+    GameState gameState = new GameState(
+            "office",
+            suspects,
+            List.of("silver locket"),
+            List.of("find owner", "check prints"),
+            "jealousy motive",
+            "bob"
+    );
+    return new GameSetup(
+            "The Case of the Silver Locket",
+            List.of(
+                    "The rain drummed against the window. A silver locket lay on my desk.",
+                    "'You’re late,' said Rosa, tossing a folder my way.",
+                    "The jazz outside muffled the tension in the room."
+            ),
+            List.of(
+                    "Inspect the locket",
+                    "Ask Rosa about the folder",
+                    "Stare at the jazz"
+            ),
+            gameState
+    );
+}
+
 
     // *****************     PRIVATE METHODS     *********************
 
@@ -55,9 +119,9 @@ public class GptModel {
     }
 
     @SneakyThrows
-    private AiSetupStoryResponseDto parseJsonStory(String json) {
+    private GameOverview parseJsonStory(String json) {
         try {
-            return gson.fromJson(json, AiSetupStoryResponseDto.class);
+            return gson.fromJson(json, GameOverview.class);
         } catch (JsonSyntaxException e) {
             throw new RuntimeException("Failed to parse GPT story JSON: " + json, e);
         }

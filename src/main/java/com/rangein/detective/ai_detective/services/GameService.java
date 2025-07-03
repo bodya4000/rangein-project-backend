@@ -1,15 +1,15 @@
 package com.rangein.detective.ai_detective.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.Gson;
 import com.rangein.detective.ai_detective.contants.AiConstants;
-import com.rangein.detective.ai_detective.dtos.controllers.GameResponseDto;
-import com.rangein.detective.ai_detective.dtos.controllers.MessagePageDto;
-import com.rangein.detective.ai_detective.dtos.controllers.ReplyMessageDto;
+import com.rangein.detective.ai_detective.dtos.controllers.*;
 import com.rangein.detective.ai_detective.dtos.repositories.MessageWithIdDto;
-import com.rangein.detective.ai_detective.dtos.services.ai.AiMessageRequestDto;
-import com.rangein.detective.ai_detective.dtos.controllers.SendMessageDto;
+import com.rangein.detective.ai_detective.dtos.services.AiMessageRequest;
 import com.rangein.detective.ai_detective.dtos.services.*;
 import com.rangein.detective.ai_detective.dtos.repositories.MessageDto;
+import com.rangein.detective.ai_detective.dtos.services.GameState;
+import com.rangein.detective.ai_detective.enums.GameResult;
 import com.rangein.detective.ai_detective.enums.GameRole;
 import com.rangein.detective.ai_detective.models.Game;
 import com.rangein.detective.ai_detective.models.User;
@@ -50,34 +50,49 @@ public class GameService {
         return getMessageHistory(gameId, pageable);
     }
 
+    public GameResultDto getGameResult(String gameId) {
+        var game = gameRepository.findByIdWithMessageHistory(gameId).orElseThrow();
+        return new GameResultDto(game.getFinished(), game.getScore());
+    }
+
+
     @Transactional
     public ReplyMessageDto sendMessage(SendMessageDto requestDto) {
-        var game = gameRepository.findByIdWithMessageHistory(requestDto.gameId()).orElseThrow();
-
-        var messageHistoryForAi = messageRepository.findAllMessages(requestDto.gameId());
+        var game = gameRepository.findById(requestDto.gameId()).orElseThrow();
         var userMessage = new MessageDto(GameRole.DETECTIVE_USER, requestDto.message());
-        var aiMessageDto = aiService.talkToAssistant(new AiMessageRequestDto(messageHistoryForAi, userMessage));
-        game.setOptions(aiMessageDto.options());
+        GameState gameOverviewJson = game.getGameState();
+        GameUpdate gameOverview = aiService.talkToAssistant(new AiMessageRequest(gameOverviewJson, userMessage));
+        game.setGameState(gameOverview.g());
+        game.setOptions(gameOverview.o());
+        Boolean finished = gameOverview.f();
+        if (Boolean.TRUE.equals(finished)) {
+            game.setFinished(true);
+            game.setScore(getGameResult(game, Boolean.TRUE.equals(gameOverview.ok())));
+        }
         messageRepository.saveMessageToGame(requestDto.message(), GameRole.DETECTIVE_USER, game);
-        var message = messageRepository.saveMessageToGame(aiMessageDto.message(), aiMessageDto.role(), game);
+        var aiMessage = messageRepository.saveMessageToGame(gameOverview.m(), GameRole.DETECTIVE_ASSISTANT_AI, game);
         return new ReplyMessageDto(
-                message.message(),
-                message.role(),
-                message.message(),
-                aiMessageDto.options()
+                aiMessage.messageId(),
+                aiMessage.role(),
+                aiMessage.message(),
+                gameOverview.o(),
+                gameOverview.f(),
+                null
         );
     }
 
     // *****************     PRIVATE METHODS     *********************
 
-    private Game setupNewGameForUser(User user) {
+    private Game setupNewGameForUser(User user) throws JsonProcessingException {
         var game = Game.builder().user(user).build();
-        gameRepository.save(game);
-
-        var gameSetupInfo = aiService.setupStory();
-        saveInitialMessages(game, gameSetupInfo);
-        updateGameStory(game, gameSetupInfo.story());
-        game.setOptions(gameSetupInfo.options());
+        GameSetup setup = aiService.setupStory();
+        game.setTitle(setup.t());
+        game.setStory(setup.p());
+        game.setOptions(setup.o());
+        game.setGameState(setup.g());
+        String firstIntroMessage = AiConstants.ASSISTANT_INTROS.get((int) (Math.random() * AiConstants.ASSISTANT_INTROS.size()));
+        game = gameRepository.save(game);
+        messageRepository.saveMessageToGame(firstIntroMessage, GameRole.DETECTIVE_ASSISTANT_AI, game);
         return game;
     }
 
@@ -101,19 +116,19 @@ public class GameService {
                 );
     }
 
-    private void saveInitialMessages(Game game, GameSetupInfoDto setupInfo) {
-        messageRepository.saveMessageToGame(AiConstants.START_PROMPT, GameRole.SYSTEM_BACKEND, game);
-        messageRepository.saveMessageToGame(gson.toJson(setupInfo.story()), GameRole.STORYTELLER_AI, game);
-        messageRepository.saveMessageToGame(setupInfo.assistantIntro(), GameRole.DETECTIVE_ASSISTANT_AI, game);
-    }
-
-    private void updateGameStory(Game game, DetectiveStoryDto story) {
-        game.setTitle(story.title());
-        game.setStory(story.parts());
-    }
-
     private Page<MessageWithIdDto> getMessageHistory(String gameId, Pageable pageable) {
         return messageRepository.findPaginatedMessageHistoryByGameId(gameId, pageable);
+    }
+
+    private GameResult getGameResult(Game game, Boolean success) {
+        if (!success) return GameResult.MISS;
+        var gameMessageHistoryLen = game.getMessages().size();
+        var GOLD_MAX_MESSAGE_LEN = 20;
+        var SILVER_MAX_MESSAGE_LEN = 30;
+
+        if (gameMessageHistoryLen <= GOLD_MAX_MESSAGE_LEN) return GameResult.GOLD;
+        if (gameMessageHistoryLen <= SILVER_MAX_MESSAGE_LEN) return GameResult.SILVER;
+        return GameResult.BRONZE;
     }
 }
 

@@ -6,22 +6,25 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Таблиця games
 CREATE TABLE IF NOT EXISTS games (
-                                     game_id VARCHAR(255) NOT NULL,
-                                     user_id VARCHAR(255),
-                                     title   VARCHAR(255),
-                                     story   JSONB,
-                                     options JSONB,
+                                     game_id        VARCHAR(255) NOT NULL,
+                                     user_id        VARCHAR(255),
+                                     title          VARCHAR(255),
+                                     story          JSONB,
+                                     options        JSONB,
+                                     game_state     JSONB,
+                                     finished       bool,
+                                     score          int,
                                      CONSTRAINT pk_games PRIMARY KEY (game_id)
 );
 
 -- Таблиця messages
 CREATE TABLE IF NOT EXISTS messages (
-                                        message_id VARCHAR(255) NOT NULL,
-                                        role       SMALLINT,
-                                        message    TEXT,
-                                        timestamp  TIMESTAMP WITHOUT TIME ZONE,
-                                        game_id    VARCHAR(255),
-                                        CONSTRAINT pk_messages PRIMARY KEY (message_id)
+                                    message_id VARCHAR(255) NOT NULL,
+                                    role       SMALLINT,
+                                    message    TEXT,
+                                    timestamp  TIMESTAMP WITHOUT TIME ZONE,
+                                    game_id    VARCHAR(255),
+                                    CONSTRAINT pk_messages PRIMARY KEY (message_id)
 );
 
 -- Foreign key для games.user_id → users.user_id
