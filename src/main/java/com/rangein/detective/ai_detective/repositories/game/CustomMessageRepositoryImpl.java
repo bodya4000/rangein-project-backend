@@ -20,15 +20,15 @@ public class CustomMessageRepositoryImpl implements CustomMessageRepository {
 
     @Override
     @Transactional
-    public MessageWithIdDto saveMessageToGame(String message, GameRole gameRole, Game game) {
+    public MessageWithIdDto saveMessageToGame(String message, String sender, Game game) {
         var messageEntity = Message.builder()
                 .message(message)
-                .role(gameRole)
+                .sender(sender)
                 .timestamp(Instant.now())
                 .game(game)
                 .build();
         entityManager.persist(messageEntity);
         entityManager.flush();
-        return new MessageWithIdDto(messageEntity.getMessageId(), messageEntity.getRole(), messageEntity.getMessage());
+        return new MessageWithIdDto(messageEntity.getMessageId(), messageEntity.getSender(), messageEntity.getMessage());
     }
 }

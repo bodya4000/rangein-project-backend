@@ -4,7 +4,9 @@ import java.util.List;
 
 public record GameSetup(
         String       t,     // title
+        List<CharacterMessage> m, // init chars messages
         List<String> p,     // parts
         List<String> o,     // options
         GameState    g      // game state
+
 ) { }

@@ -1,8 +1,6 @@
 package com.rangein.detective.ai_detective.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.gson.Gson;
-import com.rangein.detective.ai_detective.contants.AiConstants;
 import com.rangein.detective.ai_detective.dtos.controllers.*;
 import com.rangein.detective.ai_detective.dtos.repositories.MessageWithIdDto;
 import com.rangein.detective.ai_detective.dtos.services.AiMessageRequest;
@@ -12,6 +10,7 @@ import com.rangein.detective.ai_detective.dtos.services.GameState;
 import com.rangein.detective.ai_detective.enums.GameResult;
 import com.rangein.detective.ai_detective.enums.GameRole;
 import com.rangein.detective.ai_detective.models.Game;
+import com.rangein.detective.ai_detective.models.Message;
 import com.rangein.detective.ai_detective.models.User;
 import com.rangein.detective.ai_detective.repositories.GameRepository;
 import com.rangein.detective.ai_detective.repositories.UserRepository;
@@ -24,6 +23,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +35,6 @@ public class GameService {
     private final UserRepository userRepository;
     private final MessageRepository messageRepository;
     private final AiService aiService;
-    private final Gson gson;
 
     private static final int DEFAULT_PAGE_SIZE = 20;
 
@@ -59,9 +60,23 @@ public class GameService {
     @Transactional
     public ReplyMessageDto sendMessage(SendMessageDto requestDto) {
         var game = gameRepository.findById(requestDto.gameId()).orElseThrow();
-        var userMessage = new MessageDto(GameRole.DETECTIVE_USER, requestDto.message());
-        GameState gameOverviewJson = game.getGameState();
-        GameUpdate gameOverview = aiService.talkToAssistant(new AiMessageRequest(gameOverviewJson, userMessage));
+        var userMessage = new MessageDto(GameRole.PLAYER.name(), requestDto.message());
+        GameState gameState = game.getGameState();
+        GameUpdate updatedGame = aiService.talkToAssistant(new AiMessageRequest(gameState, userMessage));
+        updateGame(game, updatedGame);
+        messageRepository.saveMessageToGame(userMessage.message(),userMessage.sender(),game);
+        var savedMessages = saveCharsMessages(updatedGame.m(), game);
+        return new ReplyMessageDto(
+                savedMessages,
+                updatedGame.o(),
+                updatedGame.f(),
+                null
+        );
+    }
+
+    // *****************     PRIVATE METHODS     *********************
+
+    private void updateGame(Game game, GameUpdate gameOverview) {
         game.setGameState(gameOverview.g());
         game.setOptions(gameOverview.o());
         Boolean finished = gameOverview.f();
@@ -69,19 +84,7 @@ public class GameService {
             game.setFinished(true);
             game.setScore(getGameResult(game, Boolean.TRUE.equals(gameOverview.ok())));
         }
-        messageRepository.saveMessageToGame(requestDto.message(), GameRole.DETECTIVE_USER, game);
-        var aiMessage = messageRepository.saveMessageToGame(gameOverview.m(), GameRole.DETECTIVE_ASSISTANT_AI, game);
-        return new ReplyMessageDto(
-                aiMessage.messageId(),
-                aiMessage.role(),
-                aiMessage.message(),
-                gameOverview.o(),
-                gameOverview.f(),
-                null
-        );
     }
-
-    // *****************     PRIVATE METHODS     *********************
 
     private Game setupNewGameForUser(User user) throws JsonProcessingException {
         var game = Game.builder().user(user).build();
@@ -90,9 +93,8 @@ public class GameService {
         game.setStory(setup.p());
         game.setOptions(setup.o());
         game.setGameState(setup.g());
-        String firstIntroMessage = AiConstants.ASSISTANT_INTROS.get((int) (Math.random() * AiConstants.ASSISTANT_INTROS.size()));
         game = gameRepository.save(game);
-        messageRepository.saveMessageToGame(firstIntroMessage, GameRole.DETECTIVE_ASSISTANT_AI, game);
+        saveCharsMessages(setup.m(), game);
         return game;
     }
 
@@ -114,6 +116,23 @@ public class GameService {
                 page.getNumberOfElements(),
                 page.getContent()
                 );
+    }
+
+    private List<MessageWithIdDto> saveCharsMessages(List<CharacterMessage> messages, Game game) {
+        var transformed = messages.stream()
+                .map(msg ->
+                        Message.builder()
+                                .game(game)
+                                .message(msg.m())
+                                .sender(msg.who())
+                                .timestamp(Instant.now())
+                                .build()
+                ).toList();
+        System.out.println(transformed);
+        return messageRepository.saveAll(transformed)
+                .stream()
+                .map(m -> new MessageWithIdDto(m.getMessageId(), m.getSender(), m.getMessage()))
+                .toList();
     }
 
     private Page<MessageWithIdDto> getMessageHistory(String gameId, Pageable pageable) {

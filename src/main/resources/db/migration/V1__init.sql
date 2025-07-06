@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS games (
                                      story          JSONB,
                                      options        JSONB,
                                      game_state     JSONB,
+                                     chars          JSONB,
                                      finished       bool,
                                      score          int,
                                      CONSTRAINT pk_games PRIMARY KEY (game_id)
@@ -21,6 +22,7 @@ CREATE TABLE IF NOT EXISTS games (
 CREATE TABLE IF NOT EXISTS messages (
                                     message_id VARCHAR(255) NOT NULL,
                                     role       SMALLINT,
+                                    sender     VARCHAR(255),
                                     message    TEXT,
                                     timestamp  TIMESTAMP WITHOUT TIME ZONE,
                                     game_id    VARCHAR(255),

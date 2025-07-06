@@ -1,5 +1,6 @@
 package com.rangein.detective.ai_detective.models;
 
+import com.rangein.detective.ai_detective.dtos.services.Character;
 import com.rangein.detective.ai_detective.dtos.services.GameState;
 import com.rangein.detective.ai_detective.enums.GameResult;
 import com.rangein.detective.ai_detective.utils.StringListConverter;
@@ -59,6 +60,11 @@ public class Game {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private GameState gameState;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<Character> chars;
+
 
     private Boolean finished = false;
 
