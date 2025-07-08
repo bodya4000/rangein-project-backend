@@ -1,9 +1,8 @@
 package com.rangein.detective.ai_detective.controllers;
 
-import com.rangein.detective.ai_detective.dtos.controllers.UserResponseDto;
+import com.rangein.detective.ai_detective.dtos.controllers.user.UserResponseDto;
 import com.rangein.detective.ai_detective.dtos.controllers.auth.RegisterDto;
 import com.rangein.detective.ai_detective.services.AuthService;
-import com.rangein.detective.ai_detective.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

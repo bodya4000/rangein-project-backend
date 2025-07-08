@@ -10,6 +10,7 @@ import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.util.List;
+import java.util.Map;
 
 
 import jakarta.persistence.Column;
@@ -60,11 +61,6 @@ public class Game {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private GameState gameState;
-
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
-    private List<Character> chars;
-
 
     private Boolean finished = false;
 

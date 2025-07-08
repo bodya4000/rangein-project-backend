@@ -10,9 +10,11 @@ public interface GameRepository extends JpaRepository<Game, String> {
 
     @Query("""
     SELECT g FROM Game g
-    LEFT JOIN FETCH g.messages
+    LEFT JOIN FETCH g.user
     WHERE g.gameId = ?1
 """)
-    Optional<Game> findByIdWithMessageHistory(String gameId);
+    Optional<Game> findByIdWithUser(String gameId);
+
+
 
 }

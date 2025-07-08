@@ -1,8 +1,10 @@
 package com.rangein.detective.ai_detective.models;
 
 import com.rangein.detective.ai_detective.enums.Sex;
+import com.rangein.detective.ai_detective.utils.StringListConverter;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnTransformer;
 
 import java.util.List;
 
@@ -28,5 +30,10 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private List<Game> game;
+
+    @Column(columnDefinition = "jsonb")
+    @Convert(converter = StringListConverter.class)
+    @ColumnTransformer(write = "?::jsonb")
+    private List<String> avatarColors;
 }
 

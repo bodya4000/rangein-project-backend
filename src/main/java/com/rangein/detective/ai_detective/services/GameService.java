@@ -69,13 +69,13 @@ public class GameService {
 
     @Transactional
     public ReplyMessageDto sendMessage(SendMessageDto request) {
-        Game game = gameRepository.findById(request.gameId()).orElseThrow();
+        Game game = gameRepository.findByIdWithUser(request.gameId()).orElseThrow();
 
-        MessageDto playerMessage = new MessageDto(GameRole.PLAYER.name(), request.message());
+        MessageDto playerMessage = new MessageDto(game.getUser().getUsername(), request.message());
         AiMessageRequest aiRequest = new AiMessageRequest(game.getGameState(), playerMessage);
         GameUpdate update = aiService.talkToAssistant(aiRequest);
 
-        if (Boolean.TRUE.equals(update.f())) {
+        if (update != null && Boolean.TRUE.equals(update.f())) {
             return handleGameEnd(game, update);
         }
 

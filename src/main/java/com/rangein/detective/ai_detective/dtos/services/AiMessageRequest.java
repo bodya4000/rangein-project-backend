@@ -5,5 +5,5 @@ import com.rangein.detective.ai_detective.dtos.repositories.MessageDto;
 public record AiMessageRequest(
         GameState        g,
         MessageDto       d
-) {
+        ) {
 }
