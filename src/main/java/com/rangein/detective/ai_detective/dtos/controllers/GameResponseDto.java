@@ -7,7 +7,6 @@ import java.util.List;
 public record GameResponseDto(
         String                         gameId,
         DetectiveStoryDto              story,
-        MessagePageDto                 messageData,
         List<String>                   options
 ) {
 }

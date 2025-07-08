@@ -1,12 +1,12 @@
 package com.rangein.detective.ai_detective.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.rangein.detective.ai_detective.dtos.base.PageDto;
 import com.rangein.detective.ai_detective.dtos.controllers.*;
 import com.rangein.detective.ai_detective.dtos.repositories.MessageWithIdDto;
 import com.rangein.detective.ai_detective.dtos.services.AiMessageRequest;
 import com.rangein.detective.ai_detective.dtos.services.*;
 import com.rangein.detective.ai_detective.dtos.repositories.MessageDto;
-import com.rangein.detective.ai_detective.dtos.services.GameState;
 import com.rangein.detective.ai_detective.enums.GameResult;
 import com.rangein.detective.ai_detective.enums.GameRole;
 import com.rangein.detective.ai_detective.models.Game;
@@ -19,7 +19,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -27,127 +26,138 @@ import java.time.Instant;
 import java.util.List;
 
 
+
 @Service
 @RequiredArgsConstructor
 public class GameService {
+
+    private static final int GOLD_MAX_MESSAGE_LEN = 20;
+    private static final int SILVER_MAX_MESSAGE_LEN = 30;
 
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
     private final MessageRepository messageRepository;
     private final AiService aiService;
 
-    private static final int DEFAULT_PAGE_SIZE = 20;
-
-
     @Transactional
     @SneakyThrows
     public GameResponseDto setup(String userId) {
         User user = userRepository.findAllByIdWithGames(userId).orElseThrow();
-        Game game = user.getGame().isEmpty() ? setupNewGameForUser(user) : user.getGame().getFirst();
-        return buildSetupResponse(game);
-    }
 
-    public Page<MessageWithIdDto> getPaginatedGameMessages(String gameId, Pageable pageable) {
-        return getMessageHistory(gameId, pageable);
-    }
+        Game game = user.getGame().isEmpty()
+                ? createGame(user)
+                : user.getGame().getFirst();
 
-    public GameResultDto getGameResult(String gameId) {
-        var game = gameRepository.findByIdWithMessageHistory(gameId).orElseThrow();
-        return new GameResultDto(game.getFinished(), game.getScore());
-    }
-
-
-    @Transactional
-    public ReplyMessageDto sendMessage(SendMessageDto requestDto) {
-        var game = gameRepository.findById(requestDto.gameId()).orElseThrow();
-        var userMessage = new MessageDto(GameRole.PLAYER.name(), requestDto.message());
-        GameState gameState = game.getGameState();
-        GameUpdate updatedGame = aiService.talkToAssistant(new AiMessageRequest(gameState, userMessage));
-        updateGame(game, updatedGame);
-        messageRepository.saveMessageToGame(userMessage.message(),userMessage.sender(),game);
-        var savedMessages = saveCharsMessages(updatedGame.m(), game);
-        return new ReplyMessageDto(
-                savedMessages,
-                updatedGame.o(),
-                updatedGame.f(),
-                null
-        );
-    }
-
-    // *****************     PRIVATE METHODS     *********************
-
-    private void updateGame(Game game, GameUpdate gameOverview) {
-        game.setGameState(gameOverview.g());
-        game.setOptions(gameOverview.o());
-        Boolean finished = gameOverview.f();
-        if (Boolean.TRUE.equals(finished)) {
-            game.setFinished(true);
-            game.setScore(getGameResult(game, Boolean.TRUE.equals(gameOverview.ok())));
-        }
-    }
-
-    private Game setupNewGameForUser(User user) throws JsonProcessingException {
-        var game = Game.builder().user(user).build();
-        GameSetup setup = aiService.setupStory();
-        game.setTitle(setup.t());
-        game.setStory(setup.p());
-        game.setOptions(setup.o());
-        game.setGameState(setup.g());
-        game = gameRepository.save(game);
-        saveCharsMessages(setup.m(), game);
-        return game;
-    }
-
-    private GameResponseDto buildSetupResponse(Game game) {
-        var messagePage = getMessageHistory(game.getGameId(), PageRequest.of(0, DEFAULT_PAGE_SIZE));
         return new GameResponseDto(
                 game.getGameId(),
                 new DetectiveStoryDto(game.getTitle(), game.getStory()),
-                buildMessageData(messagePage),
                 game.getOptions()
         );
     }
 
-    private MessagePageDto buildMessageData(Page<MessageWithIdDto> page) {
-        return new MessagePageDto(
+    public PageDto<MessageWithIdDto> getMessages(String gameId, Pageable pageable) {
+        Page<MessageWithIdDto> page = messageRepository.findPaginatedMessageHistoryByGameId(gameId, pageable);
+
+        return new PageDto<>(
                 page.getNumber(),
                 page.getSize(),
                 page.getTotalPages(),
                 page.getNumberOfElements(),
                 page.getContent()
-                );
+        );
     }
 
-    private List<MessageWithIdDto> saveCharsMessages(List<CharacterMessage> messages, Game game) {
-        var transformed = messages.stream()
-                .map(msg ->
-                        Message.builder()
-                                .game(game)
-                                .message(msg.m())
-                                .sender(msg.who())
-                                .timestamp(Instant.now())
-                                .build()
-                ).toList();
-        System.out.println(transformed);
-        return messageRepository.saveAll(transformed)
-                .stream()
+    @Transactional
+    public ReplyMessageDto sendMessage(SendMessageDto request) {
+        Game game = gameRepository.findById(request.gameId()).orElseThrow();
+
+        MessageDto playerMessage = new MessageDto(GameRole.PLAYER.name(), request.message());
+        AiMessageRequest aiRequest = new AiMessageRequest(game.getGameState(), playerMessage);
+        GameUpdate update = aiService.talkToAssistant(aiRequest);
+
+        if (Boolean.TRUE.equals(update.f())) {
+            return handleGameEnd(game, update);
+        }
+
+        return handleGameContinue(game, update, playerMessage);
+    }
+
+    // =================== PRIVATE ===================
+
+    private ReplyMessageDto handleGameEnd(Game game, GameUpdate update) {
+        gameRepository.delete(game);
+        return new ReplyMessageDto(
+                List.of(),
+                List.of(),
+                true,
+                update.ok() ? 3 : 0,
+                update.g().s()
+        );
+    }
+
+    private ReplyMessageDto handleGameContinue(Game game, GameUpdate update, MessageDto playerMessage) {
+        updateGameState(game, update);
+        messageRepository.saveMessageToGame(playerMessage.message(), playerMessage.sender(), game);
+        List<MessageWithIdDto> savedMessages = saveCharacterMessages(update.m(), game);
+        return new ReplyMessageDto(
+                savedMessages,
+                update.o(),
+                false,
+                null,
+                update.g().s()
+        );
+    }
+
+    private Game createGame(User user) throws JsonProcessingException {
+        GameSetup setup = aiService.setupStory();
+
+        Game game = Game.builder()
+                .user(user)
+                .title(setup.t())
+                .story(setup.p())
+                .options(setup.o())
+                .gameState(setup.g())
+                .build();
+
+        game = gameRepository.save(game);
+        saveCharacterMessages(setup.m(), game);
+        return game;
+    }
+
+    private void updateGameState(Game game, GameUpdate update) {
+        game.setGameState(update.g());
+        game.setOptions(update.o());
+
+        if (Boolean.TRUE.equals(update.f())) {
+            game.setFinished(true);
+            game.setScore(calculateResult(game, Boolean.TRUE.equals(update.ok())));
+        }
+    }
+
+    private List<MessageWithIdDto> saveCharacterMessages(List<CharacterMessage> messages, Game game) {
+        if (messages == null || messages.isEmpty()) return List.of();
+
+        List<Message> entities = messages.stream()
+                .map(msg -> Message.builder()
+                        .game(game)
+                        .message(msg.m())
+                        .sender(msg.who())
+                        .timestamp(Instant.now())
+                        .build())
+                .toList();
+
+        return messageRepository.saveAll(entities).stream()
                 .map(m -> new MessageWithIdDto(m.getMessageId(), m.getSender(), m.getMessage()))
                 .toList();
     }
 
-    private Page<MessageWithIdDto> getMessageHistory(String gameId, Pageable pageable) {
-        return messageRepository.findPaginatedMessageHistoryByGameId(gameId, pageable);
-    }
-
-    private GameResult getGameResult(Game game, Boolean success) {
+    private GameResult calculateResult(Game game, boolean success) {
         if (!success) return GameResult.MISS;
-        var gameMessageHistoryLen = game.getMessages().size();
-        var GOLD_MAX_MESSAGE_LEN = 20;
-        var SILVER_MAX_MESSAGE_LEN = 30;
 
-        if (gameMessageHistoryLen <= GOLD_MAX_MESSAGE_LEN) return GameResult.GOLD;
-        if (gameMessageHistoryLen <= SILVER_MAX_MESSAGE_LEN) return GameResult.SILVER;
+        int count = game.getMessages().size();
+
+        if (count <= GOLD_MAX_MESSAGE_LEN) return GameResult.GOLD;
+        if (count <= SILVER_MAX_MESSAGE_LEN) return GameResult.SILVER;
         return GameResult.BRONZE;
     }
 }
-

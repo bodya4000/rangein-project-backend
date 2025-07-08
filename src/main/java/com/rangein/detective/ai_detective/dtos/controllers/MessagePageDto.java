@@ -16,7 +16,7 @@ public class MessagePageDto extends PageDto {
             @JsonProperty("totalElements") Integer totalElements,
             @JsonProperty("messages") List<MessageWithIdDto> messages
     ) {
-        super(pageNumber, pageSize, totalPages, totalElements);
+        super(pageNumber, pageSize, totalPages, totalElements, messages);
         this.messages = messages;
     }
 

@@ -45,7 +45,7 @@ public class GptModel {
 //                        "оглянути ключ",
 //                        "вийти надвір"
 //                ),
-//                new GameState(
+//                new GameState(1,
 //                        "crime_scene",
 //                        List.of(
 //                                new Suspect("Marco", "підозрілий"),

@@ -9,28 +9,23 @@ public class AiConstants {
     public static final ChatModel CHAT_MODEL = ChatModel.GPT_4O_MINI_2024_07_18;
 
     public static final String START_PROMPT = """
-Generate detective story
-I detective in branching mystery
+Generate detective game
 
-Start game
-Respond JSON
-{"t":str,"p":[str],"o":[str],"m":[],"g":{"e":[],"tn":int,"s":str,"sus":[],"cl":[str],"obj":[str],"th":str,"cul":str,"chars":[{"n":str,"g":"m/f","a":int,"r":str,"op":string}]}}
+Reply JSON
+{t:str,p:[str],o:[str],m:[],g:{e:[],tn:int,s:str,sus:[],cl:[],obj:[],th:str,cul:str,c:[{n:str,g:"m/f",a:int,r:str,o:str}]}}
 
 Rules
-e empty
-g initial state mostly empty arrays/strings/neutral values
-g.sus array {"n":str,"st":str}
-m array {who:str,m:str} from 1+ chars (g.p[n].n) init messages
-o 3 advance/mislead/absurd ≤3 words
-op character opinion/attitude about player trust/neutral/hostile etc
-r job/joke/absurdity
-no narrator/thoughts/setting
-p 3-5 parts 50-70 words each all chars involved
-stay in character
-no format notes
-output JSON only
+t 3 words
+g fields mostly empty
+sus {"n":str,"s":str}
+m {w:str,m:str} only chars
+o 3 options ≤3 words mixed style
+op trust/neutral/hostile
+r job/absurd
+p 3–5 parts 20–40 words all chars
+no thoughts/narrator/setting
+JSON only
 ≤400 tokens
-tn turn
 """;
 
 

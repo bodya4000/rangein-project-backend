@@ -1,6 +1,7 @@
 package com.rangein.detective.ai_detective.services;
 
 import com.rangein.detective.ai_detective.dtos.controllers.UserResponseDto;
+import com.rangein.detective.ai_detective.exceptions.auth.NoUserException;
 import com.rangein.detective.ai_detective.models.User;
 import com.rangein.detective.ai_detective.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,12 +15,7 @@ public class UserService {
 
 
     public UserResponseDto userInfo(String deviceId) {
-        var user = userRepository.findAllByIdWithGames(deviceId).orElse(null);
-        if (user == null) {
-            user = User.builder().userId(deviceId).build();
-            user = userRepository.save(user); // create a new user if not found by now
-        }
-
+        var user = userRepository.findAllByIdWithGames(deviceId).orElseThrow(NoUserException::new);
         return new UserResponseDto(
                 user.getUserId(),
                 (user.getGame() == null || user.getGame().isEmpty()) ? null : user.getGame().getFirst().getGameId(),
