@@ -4,8 +4,6 @@ import java.util.List;
 
 public record GameUpdate(
         List<CharacterMessage> m, // chars responses
-        List<String> o,     // options
-        GameState g,         // game state
-        Boolean   f,
-        Boolean  ok
+        List<String> o,           // options
+        GameState g               // game state
 ) { }

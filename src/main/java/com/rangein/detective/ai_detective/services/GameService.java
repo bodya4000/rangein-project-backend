@@ -8,7 +8,6 @@ import com.rangein.detective.ai_detective.dtos.services.AiMessageRequest;
 import com.rangein.detective.ai_detective.dtos.services.*;
 import com.rangein.detective.ai_detective.dtos.repositories.MessageDto;
 import com.rangein.detective.ai_detective.enums.GameResult;
-import com.rangein.detective.ai_detective.enums.GameRole;
 import com.rangein.detective.ai_detective.models.Game;
 import com.rangein.detective.ai_detective.models.Message;
 import com.rangein.detective.ai_detective.models.User;
@@ -57,7 +56,6 @@ public class GameService {
 
     public PageDto<MessageWithIdDto> getMessages(String gameId, Pageable pageable) {
         Page<MessageWithIdDto> page = messageRepository.findPaginatedMessageHistoryByGameId(gameId, pageable);
-
         return new PageDto<>(
                 page.getNumber(),
                 page.getSize(),
@@ -75,7 +73,7 @@ public class GameService {
         AiMessageRequest aiRequest = new AiMessageRequest(game.getGameState(), playerMessage);
         GameUpdate update = aiService.talkToAssistant(aiRequest);
 
-        if (update != null && Boolean.TRUE.equals(update.f())) {
+        if (Boolean.TRUE.equals(update.g().res().f())) {
             return handleGameEnd(game, update);
         }
 
@@ -86,17 +84,19 @@ public class GameService {
 
     private ReplyMessageDto handleGameEnd(Game game, GameUpdate update) {
         gameRepository.delete(game);
+        var gameResultScore = calculateResult(update.g());
         return new ReplyMessageDto(
                 List.of(),
                 List.of(),
                 true,
-                update.ok() ? 3 : 0,
-                update.g().s()
+                update.g().res().ok() ? 3 : 0, // gameResultScore
+                update.g().res().m()
         );
     }
 
     private ReplyMessageDto handleGameContinue(Game game, GameUpdate update, MessageDto playerMessage) {
-        updateGameState(game, update);
+        game.setGameState(update.g());
+        game.setOptions(update.o());
         messageRepository.saveMessageToGame(playerMessage.message(), playerMessage.sender(), game);
         List<MessageWithIdDto> savedMessages = saveCharacterMessages(update.m(), game);
         return new ReplyMessageDto(
@@ -104,7 +104,7 @@ public class GameService {
                 update.o(),
                 false,
                 null,
-                update.g().s()
+                update.g().scene()
         );
     }
 
@@ -124,15 +124,6 @@ public class GameService {
         return game;
     }
 
-    private void updateGameState(Game game, GameUpdate update) {
-        game.setGameState(update.g());
-        game.setOptions(update.o());
-
-        if (Boolean.TRUE.equals(update.f())) {
-            game.setFinished(true);
-            game.setScore(calculateResult(game, Boolean.TRUE.equals(update.ok())));
-        }
-    }
 
     private List<MessageWithIdDto> saveCharacterMessages(List<CharacterMessage> messages, Game game) {
         if (messages == null || messages.isEmpty()) return List.of();
@@ -151,13 +142,11 @@ public class GameService {
                 .toList();
     }
 
-    private GameResult calculateResult(Game game, boolean success) {
-        if (!success) return GameResult.MISS;
-
-        int count = game.getMessages().size();
-
-        if (count <= GOLD_MAX_MESSAGE_LEN) return GameResult.GOLD;
-        if (count <= SILVER_MAX_MESSAGE_LEN) return GameResult.SILVER;
+    private GameResult calculateResult(GameState gameState) {
+        if (!gameState.res().ok()) return GameResult.MISS;
+        int turn = gameState.turn();
+        if (turn <= GOLD_MAX_MESSAGE_LEN) return GameResult.GOLD;
+        if (turn <= SILVER_MAX_MESSAGE_LEN) return GameResult.SILVER;
         return GameResult.BRONZE;
     }
 }

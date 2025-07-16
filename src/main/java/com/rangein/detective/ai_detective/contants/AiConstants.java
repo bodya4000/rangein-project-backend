@@ -2,86 +2,100 @@ package com.rangein.detective.ai_detective.contants;
 
 import com.openai.models.ChatModel;
 
-import java.util.List;
 
 public class AiConstants {
-// {t:str,p:[str],o:[str],m:[],g:{e:[],tn:int,s:str,sus:[],cl:[],obj:[],th:str,cul:str,c:[{n:str,g:"m/f",a:int,r:str,o:str}]}}
     public static final ChatModel CHAT_MODEL = ChatModel.GPT_4O_MINI_2024_07_18;
 
     public static final String START_PROMPT = """
-Generate detective game
-
-Reply JSON
-{t:str,p:[str],o:[str],m:[],g:{e:[],tn:int,s:str,sus:[],cl:[],obj:[],th:str,cul:str,c:[{n:str,g:"m/f",a:int,r:str,o:str}]}}
-
-Rules
-t 3 words
-g fields mostly empty
-sus {"n":str,"s":str}
-m {who:str,m:str} atleast 1 message
-o 3 options ≤3 words mixed style
-op trust/neutral/hostile
-r job/absurd
-p 3–5 parts 20–40 words all chars
-no thoughts/narrator/setting
-JSON only
-≤400 tokens
+startgame
+makenewdetectiveworld
+replyjson
+{t:s,p:[s],o:[s],m:[{who:s,m:s}],g:{res:{f:b,ok:b,m:s,dead:[s]},events:[s],turn:n,scene:s,chars:[{name:s,gender:m/f,opinion:n}],inv:[s],obj:[s],loc:[s],flags:[s],culprit:s}}
+rules
+t3w
+p = 3–5 items, each 20–30 words
+o3x≤3w quick player option
+m fromeachplayer
+g.res.f=falsestart
+g.res.ok=true
+g.res.mempty
+g.res.dead[]
+tn0
+einvobjlocflags[]
+chars2-4w/basichp100op0
+culprit=oneofchars
 """;
 
 
     public static final String MESSAGE_PROMPT = """
 Continue game
-Player leads open world
-
-State %s
-
-Respond
-{"m":[],"o":[],"f":bool,"ok":bool,"g":{"e":[str],"tn":int,"s":str,"p":[{"n":str,"m":str,"hp":int,"op":int}],"inv":[str],"obj":[str],"loc":[str],"flags":[str]}}
-
+Player %s lead
+Request json{playerMessage:s,g:%ss}
+Response json{m:[{who:s,m:s}],o:[s],g:{res:{f:b,ok:b,m:s,dead:[s]},e:[s],tn:n,s:s,chars:[{n:s,m:s,hp:n,op:n}],inv:[s],obj:[s],loc:[s],flags:[s],culprit:s}}
 Rules
-m f false array {who:str,m:str} else empty
-  can be multiple 1–10
-  chars may talk to each other accuse argue react
-  last message must address player by name
-  player replies after
+m1-10lasttoplayer
+o3x≤3w
+g.res.fgameend
+g.res.okresult
+g.res.mresumeiff
+g.res.deadonlyextend
+ekeyevents
+culpritcankilllie
+f1ok0ifabsurd/out/neg/allDead/wrongCulprit
+f1ok1ifallagretrueCulprit
+            """;
 
-o f false 3 options advance/sidetrack/absurd ≤3 words
-f true if
-  player hp=0
-  all chars refuse/talk dead/hate
-  player acts unforgivable (e.g. "kill all")
-  tn>9 and all agree who guilty
-
-e breakthroughs (e.g. clue/confession) this tn only camelCase omit if nothing
-d player input
-g.p name mood hp opinion
-g.obj goals
-g.loc tags
-g.flags world state
-
-If player action violates logic/morality end game
-f=true ok=false ok.message what went wrong Don’t argue Stay IC
-
-No narrator No format notes JSON only
+    public static final String START_PROMPT_FOR_HUMAN_MORE_READABLE = """
 """;
 
-
-    public static final List<String> ASSISTANT_INTROS = List.of(
-        "You're just in time, detective. This case is colder than the morgue.",
-        "I knew you'd come. No one else has the guts — or the brains — to solve this.",
-        "Another mystery just hit the desk. You ready to dive in?",
-        "We’ve got a situation. Twisted, messy, and right up your alley.",
-        "The city’s shadows are restless again. Let’s find out why.",
-        "There’s something off about this onesting I need your eyes on it.",
-        "Back so soon? This one might keep you up at night.",
-        "Glad you're here. No one else sees the patterns like you do.",
-        "You're my last shot at making sense of this madness.",
-        "This case smells like lies. Let’s peel back the truth together.",
-        "I pulled the files. They'resting disturbing. You sure you're ready?",
-        "The deeper I looked, the weirder it got. This is your kind of puzzle.",
-        "No small talk. Someone vanished — and all the signs point to something big.",
-        "Ready or not, here comes another twisted riddle.",
-        "Put on your thinking cap, detective. This one’s going to hurt your head."
-        );
-
+    public static final String MESSAGE_PROMPT_FOR_HUMAN_MORE_READABLE = """
+            Continue game
+            Player ${param_player_name} leads open world
+            Request json:
+            {playerMessage:s,g:${game_state}}
+    
+            Response json:
+            {
+               "m":[{"who":"s","m":"s"}],
+               "o":["s"],
+               "g":{
+                  "res":{"f":"b","ok":"b","m":"s","dead":["s"]},
+                  "e":["s"],
+                  "tn":"n",
+                  "s":"s",
+                  "chars":[
+                     {
+                        "n":"s",
+                        "m":"s",
+                        "hp":"n",
+                        "op":"n"
+                     }
+                  ],
+                  "inv":["s"],
+                  "obj":["s"],
+                  "loc":["s"],
+                  "flags":["s"],
+                  "culprit":"s"
+               }
+            }
+            Rules:
+            m — 1–10 msgs, last to player
+            o — 3 options, each ≤3 words
+            g.res.f — game finished
+            g.res.ok — action valid
+            g.res.m — summary if finished
+            g.res.dead — only append
+            e — key events this turn
+            culprit — can kill, can lie
+    
+            f=true, ok=false if:
+            • player does absurd
+            • player out of context
+            • all chars dead
+            • all chars op<0
+            • all agree wrong culprit
+    
+            f=true, ok=true if:
+            • all agree real culprit
+            """;
 }
