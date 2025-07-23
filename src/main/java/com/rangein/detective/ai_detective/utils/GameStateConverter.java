@@ -1,7 +1,7 @@
 package com.rangein.detective.ai_detective.utils;
 
 import com.google.gson.Gson;
-import com.rangein.detective.ai_detective.dtos.services.GameState;
+import com.rangein.detective.ai_detective.dtos.models.game.GameState;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 

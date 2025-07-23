@@ -2,15 +2,12 @@ package com.rangein.detective.ai_detective.controllers;
 
 import com.rangein.detective.ai_detective.dtos.base.PageDto;
 import com.rangein.detective.ai_detective.dtos.controllers.GameResponseDto;
-import com.rangein.detective.ai_detective.dtos.controllers.GameResultDto;
 import com.rangein.detective.ai_detective.dtos.controllers.ReplyMessageDto;
 import com.rangein.detective.ai_detective.dtos.controllers.SendMessageDto;
+import com.rangein.detective.ai_detective.dtos.models.game.messages.ResponseMessage;
 import com.rangein.detective.ai_detective.dtos.repositories.MessageWithIdDto;
-import com.rangein.detective.ai_detective.enums.GameResult;
-import com.rangein.detective.ai_detective.enums.GameRole;
 import com.rangein.detective.ai_detective.services.GameService;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,7 +32,6 @@ public class GameController {
     }
 
     @PostMapping("/messages")
-    @SneakyThrows
     public ResponseEntity<ReplyMessageDto> sendMessage(@RequestBody SendMessageDto requestDto) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -43,13 +39,13 @@ public class GameController {
     }
 
     @GetMapping("/messages/{gameId}")
-    public ResponseEntity<PageDto<MessageWithIdDto>> getMessages(
+    public ResponseEntity<PageDto<ResponseMessage>> getMessages(
             @PathVariable String gameId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        PageDto<MessageWithIdDto> messages = gameService.getMessages(gameId, pageable);
+        PageDto<ResponseMessage> messages = gameService.getMessages(gameId, pageable);
         return ResponseEntity.ok(messages);
     }
 

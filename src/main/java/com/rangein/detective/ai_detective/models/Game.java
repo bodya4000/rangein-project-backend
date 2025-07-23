@@ -1,7 +1,7 @@
 package com.rangein.detective.ai_detective.models;
 
-import com.rangein.detective.ai_detective.dtos.services.Character;
-import com.rangein.detective.ai_detective.dtos.services.GameState;
+import com.rangein.detective.ai_detective.dtos.models.game.GameState;
+import com.rangein.detective.ai_detective.dtos.models.game.chars.DbCharacter;
 import com.rangein.detective.ai_detective.enums.GameResult;
 import com.rangein.detective.ai_detective.utils.StringListConverter;
 import org.hibernate.annotations.ColumnTransformer;
@@ -9,8 +9,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 
 import jakarta.persistence.Column;
@@ -50,13 +50,21 @@ public class Game {
     @Column(columnDefinition = "jsonb")
     @Convert(converter = StringListConverter.class)
     @ColumnTransformer(write = "?::jsonb")
-    private List<String> story;
-
+    private List<String> story = new ArrayList<>();
 
     @Column(columnDefinition = "jsonb")
     @Convert(converter = StringListConverter.class)
     @ColumnTransformer(write = "?::jsonb")
-    private List<String> options;
+    private List<String> options = new ArrayList<>();
+
+    @Column(columnDefinition = "jsonb")
+    @Convert(converter = StringListConverter.class)
+    @ColumnTransformer(write = "?::jsonb")
+    private List<String> dead = new ArrayList<>();
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<DbCharacter> chars = new ArrayList<>();
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")

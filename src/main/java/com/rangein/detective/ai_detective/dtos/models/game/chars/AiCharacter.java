@@ -1,7 +1,8 @@
-package com.rangein.detective.ai_detective.dtos.services;
+package com.rangein.detective.ai_detective.dtos.models.game.chars;
 
-public record Character(
+public record AiCharacter(
         String name,   // name
         String gender,   // gender ("m" / "f")
         String opinion
 ) { }
+

@@ -1,11 +1,16 @@
 package com.rangein.detective.ai_detective.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.rangein.detective.ai_detective.contants.Colors;
 import com.rangein.detective.ai_detective.dtos.base.PageDto;
 import com.rangein.detective.ai_detective.dtos.controllers.*;
+import com.rangein.detective.ai_detective.dtos.models.game.GameSetup;
+import com.rangein.detective.ai_detective.dtos.models.game.GameState;
+import com.rangein.detective.ai_detective.dtos.models.game.GameUpdate;
+import com.rangein.detective.ai_detective.dtos.models.game.chars.DbCharacter;
+import com.rangein.detective.ai_detective.dtos.models.game.messages.AiCharacterMessage;
+import com.rangein.detective.ai_detective.dtos.models.game.messages.ResponseMessage;
 import com.rangein.detective.ai_detective.dtos.repositories.MessageWithIdDto;
-import com.rangein.detective.ai_detective.dtos.services.AiMessageRequest;
-import com.rangein.detective.ai_detective.dtos.services.*;
+import com.rangein.detective.ai_detective.dtos.services.ai.AiMessageRequest;
 import com.rangein.detective.ai_detective.dtos.repositories.MessageDto;
 import com.rangein.detective.ai_detective.enums.GameResult;
 import com.rangein.detective.ai_detective.models.Game;
@@ -22,8 +27,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Optional;
+import java.util.Random;
 
 
 @Service
@@ -49,19 +56,37 @@ public class GameService {
 
         return new GameResponseDto(
                 game.getGameId(),
-                new DetectiveStoryDto(game.getTitle(), game.getStory()),
+                game.getTitle(),
+                game.getStory(),
                 game.getOptions()
         );
     }
 
-    public PageDto<MessageWithIdDto> getMessages(String gameId, Pageable pageable) {
+    public PageDto<ResponseMessage> getMessages(String gameId, Pageable pageable) {
+        Game game = gameRepository.findById(gameId).orElseThrow();
         Page<MessageWithIdDto> page = messageRepository.findPaginatedMessageHistoryByGameId(gameId, pageable);
+        List<ResponseMessage> messages = page.getContent()
+                .stream()
+                .map(m -> {
+                    var colors = game.getChars().stream()
+                            .filter(c -> c.name().equals(m.sender()))
+                            .findFirst()
+                            .map(DbCharacter::messageColors)
+                            .orElse(List.of("#000000", "#333333"));
+                    return new ResponseMessage(
+                            m.messageId(),
+                            m.sender(),
+                            m.message(),
+                            colors
+                    );
+                })
+                .toList();
         return new PageDto<>(
                 page.getNumber(),
                 page.getSize(),
                 page.getTotalPages(),
                 page.getNumberOfElements(),
-                page.getContent()
+                messages
         );
     }
 
@@ -85,9 +110,17 @@ public class GameService {
     private ReplyMessageDto handleGameEnd(Game game, GameUpdate update) {
         gameRepository.delete(game);
         var gameResultScore = calculateResult(update.g());
+        var existingDead = game.getDead() != null ? game.getDead() : List.of();
+
+        var justBeenDead = update.g().res().dead()
+                .stream()
+                .filter(dead -> !existingDead.contains(dead))
+                .findFirst();
         return new ReplyMessageDto(
                 List.of(),
                 List.of(),
+                update.g().res().dead(),
+                justBeenDead.orElse(null),
                 true,
                 update.g().res().ok() ? 3 : 0, // gameResultScore
                 update.g().res().m()
@@ -98,18 +131,51 @@ public class GameService {
         game.setGameState(update.g());
         game.setOptions(update.o());
         messageRepository.saveMessageToGame(playerMessage.message(), playerMessage.sender(), game);
-        List<MessageWithIdDto> savedMessages = saveCharacterMessages(update.m(), game);
+        List<ResponseMessage> savedMessages = saveCharacterMessages(update.m(), game)
+                .stream()
+                .map(m -> new ResponseMessage(
+                        m.messageId(),
+                        m.sender(),
+                        m.message(),
+                        game.getChars().stream()
+                                .filter(c -> c.name().equals(m.sender()))
+                                .findFirst()
+                                .orElseThrow().messageColors()
+                ))
+                .toList();
+
+        var existingDead = game.getDead() != null ? game.getDead() : List.of();
+
+        var justBeenDead = update.g().res().dead()
+                .stream()
+                .filter(dead -> !existingDead.contains(dead))
+                .findFirst();
+
         return new ReplyMessageDto(
                 savedMessages,
                 update.o(),
+                update.g().res().dead(),
+                justBeenDead.orElse(null),
                 false,
                 null,
                 update.g().scene()
         );
     }
 
-    private Game createGame(User user) throws JsonProcessingException {
+    private Game createGame(User user) {
         GameSetup setup = aiService.setupStory();
+        List<DbCharacter> chars = setup.g().chars().stream()
+                .map(character -> {
+                    var randomCharColor = new Random().nextInt(Colors.gradientCharMessageColors.size());
+                    var charColorList = new ArrayList<>(Colors.gradientCharMessageColors.values());
+                    var charColor = charColorList.get(randomCharColor);
+                    return  new DbCharacter(
+                            character.name(),
+                            character.gender(),
+                            charColor
+                            );
+                }).toList();
+
 
         Game game = Game.builder()
                 .user(user)
@@ -117,6 +183,7 @@ public class GameService {
                 .story(setup.p())
                 .options(setup.o())
                 .gameState(setup.g())
+                .chars(chars)
                 .build();
 
         game = gameRepository.save(game);
@@ -125,7 +192,7 @@ public class GameService {
     }
 
 
-    private List<MessageWithIdDto> saveCharacterMessages(List<CharacterMessage> messages, Game game) {
+    private List<ResponseMessage> saveCharacterMessages(List<AiCharacterMessage> messages, Game game) {
         if (messages == null || messages.isEmpty()) return List.of();
 
         List<Message> entities = messages.stream()
@@ -138,7 +205,20 @@ public class GameService {
                 .toList();
 
         return messageRepository.saveAll(entities).stream()
-                .map(m -> new MessageWithIdDto(m.getMessageId(), m.getSender(), m.getMessage()))
+                .map(m -> {
+                    var colors = game.getChars().stream()
+                            .filter(c -> c.name().equals(m.getSender()))
+                            .findFirst()
+                            .orElseThrow()
+                            .messageColors();
+
+                    return new ResponseMessage(
+                            m.getMessageId(),
+                            m.getSender(),
+                            m.getMessage(),
+                            colors
+                    );
+                })
                 .toList();
     }
 

@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS games (
                                      title          VARCHAR(255),
                                      story          JSONB,
                                      options        JSONB,
+                                     dead           JSONB,
                                      game_state     JSONB,
                                      chars          JSONB,
                                      finished       bool,

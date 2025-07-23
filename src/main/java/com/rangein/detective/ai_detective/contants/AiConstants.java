@@ -30,7 +30,7 @@ culprit=oneofchars
     public static final String MESSAGE_PROMPT = """
 Continue game
 Player %s lead
-Request json{playerMessage:s,g:%ss}
+Request json %ss
 Response json{m:[{who:s,m:s}],o:[s],g:{res:{f:b,ok:b,m:s,dead:[s]},e:[s],tn:n,s:s,chars:[{n:s,m:s,hp:n,op:n}],inv:[s],obj:[s],loc:[s],flags:[s],culprit:s}}
 Rules
 m1-10lasttoplayer
@@ -41,9 +41,9 @@ g.res.mresumeiff
 g.res.deadonlyextend
 ekeyevents
 culpritcankilllie
-f1ok0ifabsurd/out/neg/allDead/wrongCulprit
-f1ok1ifallagretrueCulprit
-            """;
+loss if: player kills without reason, blames without evidence, all innocent characters die, or everyone accuses wrong culprit
+win if all characters agree on true culprit
+""";
 
     public static final String START_PROMPT_FOR_HUMAN_MORE_READABLE = """
 """;

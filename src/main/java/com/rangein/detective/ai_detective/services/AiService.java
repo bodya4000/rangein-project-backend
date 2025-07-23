@@ -1,11 +1,9 @@
 package com.rangein.detective.ai_detective.services;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.rangein.detective.ai_detective.dtos.services.GameOverview;
-import com.rangein.detective.ai_detective.dtos.services.AiMessageRequest;
-import com.rangein.detective.ai_detective.dtos.services.GameSetup;
-import com.rangein.detective.ai_detective.dtos.services.GameUpdate;
+import com.rangein.detective.ai_detective.dtos.services.ai.AiMessageRequest;
+import com.rangein.detective.ai_detective.dtos.models.game.GameSetup;
+import com.rangein.detective.ai_detective.dtos.models.game.GameUpdate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +12,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AiService {
 
-    private final GptModel gptModel;
+    private final OpenAiPromptService openAiPromptService;
 
 //    public GameSetupInfoDto setupStoryV1() throws JsonProcessingException {
 //        GameOverview gameOverview = gptModel.setupCrimeStory();
@@ -26,13 +24,13 @@ public class AiService {
 //                gameOverview.o());
 //    }
 
-    public GameSetup setupStory() throws JsonProcessingException {
-        return gptModel.setupCrimeStory();
+    public GameSetup setupStory() {
+        return openAiPromptService.setupCrimeStoryMock();
     }
 
 
     public GameUpdate talkToAssistant(AiMessageRequest messageRequestDto) {
-        return gptModel.talkToAssistant(messageRequestDto);
+        return openAiPromptService.talkToAssistantMock(messageRequestDto);
     }
 
 }
