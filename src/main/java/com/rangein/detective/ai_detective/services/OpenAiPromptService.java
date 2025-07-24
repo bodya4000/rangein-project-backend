@@ -16,6 +16,7 @@ import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 
 @Service
@@ -25,42 +26,49 @@ public class OpenAiPromptService {
     private final OpenAIClient openAIClient;
     private final Gson gson;
 
+//    private String minifyPrompt(String input) {
+//        return input
+//                .replaceAll("[\\s,-]+", "")
+//                .trim();
+//    }
+
+
     @SneakyThrows
     public GameUpdate talkToAssistant(AiMessageRequest messageRequestDto) {
         String requestJson = gson.toJson(messageRequestDto);
         String name = messageRequestDto.d().sender();
-        String finalRequest = String.format(AiConstants.MESSAGE_PROMPT, name, requestJson);
+        String finalRequest = (String.format(AiConstants.MESSAGE_PROMPT, name, requestJson));
         System.out.println(finalRequest);
         String rawResponse = requestMessage(finalRequest);
         System.out.println(rawResponse);
         String cleaned = cleanGptResponse(rawResponse);
         GameUpdate aiMessageData = gson.fromJson(cleaned, GameUpdate.class);
-        System.out.println(aiMessageData);
+//        System.out.println(aiMessageData);
         return aiMessageData;
     }
 
     public GameUpdate talkToAssistantMock(AiMessageRequest messageRequestDto) {
         List<AiCharacterMessage> messages = List.of(
-                new AiCharacterMessage("Detective Jane", "I think we should investigate the library."),
-                new AiCharacterMessage("Detective Mike", "Agreed. There’s something odd there.")
+                new AiCharacterMessage("DetectiveA", "I think we should investigate the library."),
+                new AiCharacterMessage("DetectiveB", "Agreed. There’s something odd there.")
         );
 
         List<String> options = List.of("Go to library", "Interrogate suspect", "Examine body");
 
         GameState gameState = new GameState(
-                new GameResult(false, false, "Turn continued", List.of("Detective Jane")),
+                new GameResult(false, false, "Turn continued", List.of("DetectiveB")),
                 List.of("Interrogation started"),
                 1,
                 "crime_scene",
                 List.of(
-                        new AiCharacter("Detective Jane", "f", "neutral"),
-                        new AiCharacter("Detective Mike", "m", "neutral")
+                        new AiCharacter("DetectiveA", "f", "neutral", "", Map.of()),
+                        new AiCharacter("DetectiveB", "m", "neutral", "", Map.of())
                 ),
                 List.of("notebook", "flashlight"),
                 List.of("Find clue", "Interrogate suspects"),
                 List.of("Library", "Kitchen"),
                 List.of("interrogation_started"),
-                "Mr. Smith"
+                "DetectiveA"
         );
 
         return new GameUpdate(messages, options, gameState);
@@ -80,29 +88,39 @@ public class OpenAiPromptService {
 
     public GameSetup setupCrimeStoryMock() {
         List<AiCharacterMessage> messages = List.of(
-                new AiCharacterMessage("Detective Jane", "The case begins. Stay sharp."),
-                new AiCharacterMessage("Detective Mike", "Let’s find the truth.")
+                new AiCharacterMessage("DetectiveA", "I think I found a clue."),
+                new AiCharacterMessage("DetectiveB", "Let's interrogate the witness.")
         );
 
-        List<String> options = List.of("Look around", "Talk to witnesses", "Check victim");
+        List<String> options = List.of("Look around", "Interview suspect", "Check inventory");
 
         GameState gameState = new GameState(
                 new GameResult(false, true, "", List.of()),
-                List.of(),
-                0,
-                "intro_scene",
+                List.of(), // events порожній
+                0, // turn
+                "Crime Scene", // scene
                 List.of(
-                        new AiCharacter("Detective Jane", "f", "neutral"),
-                        new AiCharacter("Detective Mike", "m", "neutral")
+                        new AiCharacter("DetectiveA", "f", "neutral", "", Map.of()),
+                        new AiCharacter("DetectiveB", "m", "neutral", "", Map.of())
                 ),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                null
+                List.of(), // inv
+                List.of(), // obj
+                List.of(), // loc
+                List.of(), // flags
+                "DetectiveB" // culprit
         );
 
-        return new GameSetup("Murder at the Manor", List.of("intro", "investigation", "reveal"), options, messages, gameState);
+        return new GameSetup(
+                "Detective World", // title
+                List.of(
+                        "Investigate a mysterious crime scene filled with clues and red herrings.",
+                        "Interview suspicious characters while gathering evidence to piece together the truth.",
+                        "Unravel a complex web of deceit that leads to unexpected twists."
+                ),
+                options,
+                messages,
+                gameState
+        );
     }
 
 

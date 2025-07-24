@@ -4,6 +4,7 @@ import com.rangein.detective.ai_detective.dtos.models.game.messages.AiCharacterM
 
 import java.util.List;
 
+
 public record GameUpdate(
         List<AiCharacterMessage> m, // chars responses
         List<String> o,           // options

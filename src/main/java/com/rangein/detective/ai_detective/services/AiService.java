@@ -30,7 +30,7 @@ public class AiService {
 
 
     public GameUpdate talkToAssistant(AiMessageRequest messageRequestDto) {
-        return openAiPromptService.talkToAssistantMock(messageRequestDto);
+        return openAiPromptService.talkToAssistant(messageRequestDto);
     }
 
 }

@@ -1,7 +1,10 @@
 package com.rangein.detective.ai_detective.exceptions.auth;
 
-public class NoUserException extends RuntimeException {
+import com.rangein.detective.ai_detective.exceptions.BaseException;
+
+public class NoUserException extends BaseException {
+
   public NoUserException() {
-    super("No such user!");
+    super(404, "No user found");
   }
 }

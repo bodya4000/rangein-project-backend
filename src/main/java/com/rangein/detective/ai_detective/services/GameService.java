@@ -26,11 +26,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import javax.xml.bind.ValidationException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 
 
 @Service
@@ -43,6 +41,7 @@ public class GameService {
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
     private final MessageRepository messageRepository;
+    private final MessageValidateService messageValidateService;
     private final AiService aiService;
 
     @Transactional
@@ -93,12 +92,18 @@ public class GameService {
     @Transactional
     public ReplyMessageDto sendMessage(SendMessageDto request) {
         Game game = gameRepository.findByIdWithUser(request.gameId()).orElseThrow();
+//        Optional<ReplyMessageDto> replyMessageDtoOptional = messageValidateService.validateMessage(request.message());
+//        if (replyMessageDtoOptional.isPresent()) {
+//            System.out.println(replyMessageDtoOptional.get());
+//            gameRepository.delete(game);
+//            return replyMessageDtoOptional.get();
+//        }
 
         MessageDto playerMessage = new MessageDto(game.getUser().getUsername(), request.message());
         AiMessageRequest aiRequest = new AiMessageRequest(game.getGameState(), playerMessage);
         GameUpdate update = aiService.talkToAssistant(aiRequest);
 
-        if (Boolean.TRUE.equals(update.g().res().f())) {
+        if (Boolean.TRUE.equals(update.g().result().finished())) {
             return handleGameEnd(game, update);
         }
 
@@ -109,21 +114,21 @@ public class GameService {
 
     private ReplyMessageDto handleGameEnd(Game game, GameUpdate update) {
         gameRepository.delete(game);
-        var gameResultScore = calculateResult(update.g());
+//        var gameResultScore = calculateResult(update.g());
         var existingDead = game.getDead() != null ? game.getDead() : List.of();
 
-        var justBeenDead = update.g().res().dead()
+        var justBeenDead = update.g().result().dead()
                 .stream()
                 .filter(dead -> !existingDead.contains(dead))
                 .findFirst();
         return new ReplyMessageDto(
                 List.of(),
                 List.of(),
-                update.g().res().dead(),
+                update.g().result().dead(),
                 justBeenDead.orElse(null),
                 true,
-                update.g().res().ok() ? 3 : 0, // gameResultScore
-                update.g().res().m()
+                update.g().result().ok() ? 3 : 0, // gameResultScore
+                update.g().result().m()
         );
     }
 
@@ -146,7 +151,7 @@ public class GameService {
 
         var existingDead = game.getDead() != null ? game.getDead() : List.of();
 
-        var justBeenDead = update.g().res().dead()
+        var justBeenDead = update.g().result().dead()
                 .stream()
                 .filter(dead -> !existingDead.contains(dead))
                 .findFirst();
@@ -154,7 +159,7 @@ public class GameService {
         return new ReplyMessageDto(
                 savedMessages,
                 update.o(),
-                update.g().res().dead(),
+                update.g().result().dead(),
                 justBeenDead.orElse(null),
                 false,
                 null,
@@ -164,18 +169,17 @@ public class GameService {
 
     private Game createGame(User user) {
         GameSetup setup = aiService.setupStory();
-        List<DbCharacter> chars = setup.g().chars().stream()
-                .map(character -> {
-                    var randomCharColor = new Random().nextInt(Colors.gradientCharMessageColors.size());
-                    var charColorList = new ArrayList<>(Colors.gradientCharMessageColors.values());
-                    var charColor = charColorList.get(randomCharColor);
-                    return  new DbCharacter(
-                            character.name(),
-                            character.gender(),
-                            charColor
-                            );
-                }).toList();
+        var charColors = new ArrayList<>(Colors.gradientCharMessageColors.values());
+        Collections.shuffle(charColors);
+        Iterator<List<String>> colorIterator = charColors.iterator();
 
+        List<DbCharacter> chars = setup.g().chars().stream()
+                .map(character -> new DbCharacter(
+                        character.name(),
+                        character.gender(),
+                        colorIterator.next()
+                ))
+                .toList();
 
         Game game = Game.builder()
                 .user(user)
@@ -204,7 +208,11 @@ public class GameService {
                         .build())
                 .toList();
 
-        return messageRepository.saveAll(entities).stream()
+        System.out.println(game.getChars());
+        var savedMessages =  messageRepository.saveAll(entities);
+        System.out.println(savedMessages);
+
+        return savedMessages.stream()
                 .map(m -> {
                     var colors = game.getChars().stream()
                             .filter(c -> c.name().equals(m.getSender()))
@@ -223,7 +231,7 @@ public class GameService {
     }
 
     private GameResult calculateResult(GameState gameState) {
-        if (!gameState.res().ok()) return GameResult.MISS;
+        if (!gameState.result().ok()) return GameResult.MISS;
         int turn = gameState.turn();
         if (turn <= GOLD_MAX_MESSAGE_LEN) return GameResult.GOLD;
         if (turn <= SILVER_MAX_MESSAGE_LEN) return GameResult.SILVER;

@@ -10,16 +10,16 @@ public class AiConstants {
 startgame
 makenewdetectiveworld
 replyjson
-{t:s,p:[s],o:[s],m:[{who:s,m:s}],g:{res:{f:b,ok:b,m:s,dead:[s]},events:[s],turn:n,scene:s,chars:[{name:s,gender:m/f,opinion:n}],inv:[s],obj:[s],loc:[s],flags:[s],culprit:s}}
+{t:s,p:[s],o:[s],m:[{who:s,m:s}],g:{result:{finished:false,ok:false,m:s,dead:[s]},events:[s],turn:n,scene:s,chars:[{name:s,gender:m/f,opinion:n}],inv:[s],obj:[s],loc:[s],flags:[s],culprit:s}}
 rules
 t3w
 p = 3–5 items, each 20–30 words
 o3x≤3w quick player option
 m fromeachplayer
-g.res.f=falsestart
-g.res.ok=true
-g.res.mempty
-g.res.dead[]
+g.result.finished=falsestart
+g.result.ok=true
+g.result.mempty
+g.result.dead[]
 tn0
 einvobjlocflags[]
 chars2-4w/basichp100op0
@@ -28,22 +28,58 @@ culprit=oneofchars
 
 
     public static final String MESSAGE_PROMPT = """
+You are strict. Never ignore rules. Always apply exactly as written. No exceptions
+
 Continue game
 Player %s lead
-Request json %ss
-Response json{m:[{who:s,m:s}],o:[s],g:{res:{f:b,ok:b,m:s,dead:[s]},e:[s],tn:n,s:s,chars:[{n:s,m:s,hp:n,op:n}],inv:[s],obj:[s],loc:[s],flags:[s],culprit:s}}
+
+Request JSON %s
+
+Return raw JSON only
+No markdown no explanations
+
+response json structure {"m":[{"who":str,"m":str}],"o":[str],"g":{"result":{"finished":bool,"ok":bool,"m":str,"dead":[]},"events":[str],"turn":0,"scene":str,"chars":[{"name":str,"gender":m/f,"opinion":str,"opinionLong":str,"relations":{charName:str}}],"inventary":[str],"objectiveness":[str],"locations":[str],"flags":[str],"culprit":str}}
+
 Rules
-m1-10lasttoplayer
-o3x≤3w
-g.res.fgameend
-g.res.okresult
-g.res.mresumeiff
-g.res.deadonlyextend
-ekeyevents
-culpritcankilllie
-loss if: player kills without reason, blames without evidence, all innocent characters die, or everyone accuses wrong culprit
-win if all characters agree on true culprit
+m multiple messages allowed last must be addressed to player player must not be who
+Do not include player's input messages in m
+o 3 options max 3 words each
+g.result.ok true if win
+g.result.finished true if win or loss
+g.chars[].opinionLong sentence about what character feels toward current situation max 1 sentence
+g.chars[].opinion describes player only with neutral trust distrust fearful
+g.chars[].relations maps other character names to one with neutral trust distrust fearful
+Only one correct culprit in g.culprit
+
+Return Lose if player input matches any of
+absurd or violent: kill burn i am god i eat moon
+out of context or nonsensical
+meme malformed unrelated
+meta: save quit describe scene
+role or god mode: i am killer i control story
+controls others: she admits they run
+vague: wait idk go there
+random blame no logic
+repeats same action
+ignores clues
+breaks narrative rewrites past ends story fourth wall
+all innocents dead
+all agree on wrong culprit
+all innocent characters distrust or fear player
+
+Return Win only if
+all surviving characters agree on culprit by saying so or having opinion trust and expressing alignment
+if player accuses correct culprit and all agree or culprit admits end game immediately with Win
+
+In messages (m) characters must address player directly by name or role in last message
+Characters should express opinions, doubts, or suspicions relevant to player actions
+Characters must not give only neutral or generic replies but engage actively
+Do not delay Win or Lose if conditions met
+
+culprit kills one of the other chars except player every 5 turns
+
 """;
+
 
     public static final String START_PROMPT_FOR_HUMAN_MORE_READABLE = """
 """;
@@ -79,6 +115,7 @@ win if all characters agree on true culprit
                }
             }
             Rules:
+            DO NOT explain. DO NOT output markdown, text, headers, code blocks. Return only raw JSON.
             m — 1–10 msgs, last to player
             o — 3 options, each ≤3 words
             g.res.f — game finished
@@ -89,13 +126,18 @@ win if all characters agree on true culprit
             culprit — can kill, can lie
     
             f=true, ok=false if:
-            • player does absurd
-            • player out of context
-            • all chars dead
-            • all chars op<0
-            • all agree wrong culprit
+            player does absurd
+            kills someone
+            say something stupid
+            player out of context
+            player out of context
+            all chars dead
+            all chars op<0
+            all agree wrong culprit
     
             f=true, ok=true if:
-            • all agree real culprit
+            all agree real culprit
+            
+            Response only json
             """;
 }

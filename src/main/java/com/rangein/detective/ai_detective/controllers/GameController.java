@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.xml.bind.ValidationException;
 import java.util.List;
 
 
@@ -32,7 +33,7 @@ public class GameController {
     }
 
     @PostMapping("/messages")
-    public ResponseEntity<ReplyMessageDto> sendMessage(@RequestBody SendMessageDto requestDto) {
+    public ResponseEntity<ReplyMessageDto> sendMessage(@RequestBody SendMessageDto requestDto) throws ValidationException {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(gameService.sendMessage(requestDto));
