@@ -26,7 +26,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import javax.xml.bind.ValidationException;
 import java.time.Instant;
 import java.util.*;
 
@@ -92,15 +91,16 @@ public class GameService {
     @Transactional
     public ReplyMessageDto sendMessage(SendMessageDto request) {
         Game game = gameRepository.findByIdWithUser(request.gameId()).orElseThrow();
-//        Optional<ReplyMessageDto> replyMessageDtoOptional = messageValidateService.validateMessage(request.message());
-//        if (replyMessageDtoOptional.isPresent()) {
-//            System.out.println(replyMessageDtoOptional.get());
-//            gameRepository.delete(game);
-//            return replyMessageDtoOptional.get();
-//        }
+        Optional<ReplyMessageDto> replyMessageDtoOptional = messageValidateService.validateMessage(request.message());
+        if (replyMessageDtoOptional.isPresent()) {
+            System.out.println(replyMessageDtoOptional.get());
+            gameRepository.delete(game);
+            return replyMessageDtoOptional.get();
+        }
 
         MessageDto playerMessage = new MessageDto(game.getUser().getUsername(), request.message());
-        AiMessageRequest aiRequest = new AiMessageRequest(game.getGameState(), playerMessage);
+        boolean shouldKill = game.getGameState().turn() % 2 == 0 && game.getGameState().turn() != 0;
+        AiMessageRequest aiRequest = new AiMessageRequest(game.getGameState(), playerMessage, shouldKill);
         GameUpdate update = aiService.talkToAssistant(aiRequest);
 
         if (Boolean.TRUE.equals(update.g().result().finished())) {
@@ -156,6 +156,12 @@ public class GameService {
                 .filter(dead -> !existingDead.contains(dead))
                 .findFirst();
 
+        if (justBeenDead.isPresent()) {
+            List<String> dead = new ArrayList<>(game.getDead() == null ? List.of() : game.getDead());
+            dead.add(justBeenDead.get());
+            game.setDead(dead);
+        }
+
         return new ReplyMessageDto(
                 savedMessages,
                 update.o(),
@@ -173,7 +179,7 @@ public class GameService {
         Collections.shuffle(charColors);
         Iterator<List<String>> colorIterator = charColors.iterator();
 
-        List<DbCharacter> chars = setup.g().chars().stream()
+        List<DbCharacter> chars = setup.g().npcs().stream()
                 .map(character -> new DbCharacter(
                         character.name(),
                         character.gender(),
@@ -188,6 +194,7 @@ public class GameService {
                 .options(setup.o())
                 .gameState(setup.g())
                 .chars(chars)
+                .dead(setup.g().result().dead())
                 .build();
 
         game = gameRepository.save(game);

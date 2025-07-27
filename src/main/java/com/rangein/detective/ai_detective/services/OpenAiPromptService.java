@@ -13,12 +13,14 @@ import com.rangein.detective.ai_detective.dtos.models.game.chars.AiCharacter;
 import com.rangein.detective.ai_detective.dtos.services.ai.AiMessageRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
 
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OpenAiPromptService {
@@ -37,7 +39,12 @@ public class OpenAiPromptService {
     public GameUpdate talkToAssistant(AiMessageRequest messageRequestDto) {
         String requestJson = gson.toJson(messageRequestDto);
         String name = messageRequestDto.d().sender();
-        String finalRequest = (String.format(AiConstants.MESSAGE_PROMPT, name, requestJson));
+        String prompt = AiConstants.MESSAGE_PROMPT;
+        System.out.println(messageRequestDto);
+        if (messageRequestDto.mafiaShouldKillInThatTurnNewNpc()) {
+            prompt += AiConstants.KILL_PROMPT;
+        }
+        String finalRequest = (String.format(prompt, name, requestJson));
         System.out.println(finalRequest);
         String rawResponse = requestMessage(finalRequest);
         System.out.println(rawResponse);
@@ -49,31 +56,38 @@ public class OpenAiPromptService {
 
     public GameUpdate talkToAssistantMock(AiMessageRequest messageRequestDto) {
         List<AiCharacterMessage> messages = List.of(
-                new AiCharacterMessage("DetectiveA", "I think we should investigate the library."),
-                new AiCharacterMessage("DetectiveB", "Agreed. There’s something odd there.")
+                new AiCharacterMessage("Inspector Reed", "We should recheck the victim's timeline."),
+                new AiCharacterMessage("Officer Vega", "I'll pull the witness statements again."),
+                new AiCharacterMessage("Dr. Morgan", "I noticed some irregularities in the autopsy report.")
         );
 
-        List<String> options = List.of("Go to library", "Interrogate suspect", "Examine body");
+        List<String> options = List.of("Check timeline", "Re-interview witnesses", "Review autopsy");
 
-        GameState gameState = new GameState(
-                new GameResult(false, false, "Turn continued", List.of("DetectiveB")),
-                List.of("Interrogation started"),
-                1,
-                "crime_scene",
+        GameState gameState =  new GameState(
+                new GameResult(false, false, "Case still open. No consensus.", List.of()),
+                List.of("Reed asked Vega about fingerprints", "Morgan hesitated on timeline"),
+                5,
+                "Victim's Apartment – Rain, broken lamp flickers",
                 List.of(
-                        new AiCharacter("DetectiveA", "f", "neutral", "", Map.of()),
-                        new AiCharacter("DetectiveB", "m", "neutral", "", Map.of())
+                        new AiCharacter("Inspector Reed", "m", "neutral", "Experienced, cautious, watches everyone.", Map.of("Dr. Morgan", "suspicious")),
+                        new AiCharacter("Officer Vega", "f", "trust", "Meticulous, trusts user, but unsure of Morgan.", Map.of("Dr. Morgan", "fear")),
+                        new AiCharacter("Dr. Morgan", "f", "distrust", "Cold, technical, avoids questions.", Map.of("User", "distrust"))
                 ),
-                List.of("notebook", "flashlight"),
-                List.of("Find clue", "Interrogate suspects"),
-                List.of("Library", "Kitchen"),
-                List.of("interrogation_started"),
-                "DetectiveA"
+                List.of("lamp has partial fingerprint", "timeline mismatch on Morgan", "blood matches victim"),
+                Map.of(
+                        "Dr. Morgan", 3,
+                        "Inspector Reed", 1,
+                        "Officer Vega", 0
+                ),
+                List.of("fingerprint matches Morgan", "Morgan's timeline contradicts report"),
+                List.of("Victim's Apartment", "Forensics Lab"),
+                List.of("morgan_alibi_questioned", "fingerprint_checked"),
+                "Dr. Morgan"
         );
+
 
         return new GameUpdate(messages, options, gameState);
     }
-
 
 
     @SneakyThrows
@@ -88,40 +102,59 @@ public class OpenAiPromptService {
 
     public GameSetup setupCrimeStoryMock() {
         List<AiCharacterMessage> messages = List.of(
-                new AiCharacterMessage("DetectiveA", "I think I found a clue."),
-                new AiCharacterMessage("DetectiveB", "Let's interrogate the witness.")
+                new AiCharacterMessage("Inspector Reed", "Morgan was the last to see the victim alive."),
+//                new AiCharacterMessage("Officer Vega", "I found traces of sedative in the tea."),
+                new AiCharacterMessage("Dr. Morgan", "You think I’d risk everything for this?")
         );
 
-        List<String> options = List.of("Look around", "Interview suspect", "Check inventory");
+        List<String> options = List.of("Inspect tea", "Question Morgan", "Check victim's room");
 
         GameState gameState = new GameState(
-                new GameResult(false, true, "", List.of()),
-                List.of(), // events порожній
-                0, // turn
-                "Crime Scene", // scene
+                new GameResult(false, false, "Investigation intensifies.", List.of("Officer Vega")),
                 List.of(
-                        new AiCharacter("DetectiveA", "f", "neutral", "", Map.of()),
-                        new AiCharacter("DetectiveB", "m", "neutral", "", Map.of())
+                        "Vega found sedative traces",
+                        "Reed suspects Morgan"
                 ),
-                List.of(), // inv
-                List.of(), // obj
-                List.of(), // loc
-                List.of(), // flags
-                "DetectiveB" // culprit
+                4,
+                "Victim's Home – Dimly lit, overturned furniture",
+                List.of(
+                        new AiCharacter("Inspector Reed", "m", "trust", "Veteran, thinks logically, respects User.", Map.of("Dr. Morgan", "suspicious")),
+                        new AiCharacter("Officer Vega", "f", "neutral", "Detailed, observant.", Map.of("Dr. Morgan", "fear")),
+                        new AiCharacter("Dr. Morgan", "f", "distrust", "Icy, formal, hides anger beneath professionalism.", Map.of("User", "distrust"))
+                ),
+                List.of(
+                        "sedative bottle", "broken teacup", "Reed's notes"
+                ),
+                Map.of(
+                        "Dr. Morgan", 3,
+                        "Inspector Reed", 1,
+                        "Officer Vega", 0
+                ),
+                List.of(
+                        "tea has sedative", "Morgan served last drink"
+                ),
+                List.of(
+                        "Victim's Home", "Morgue", "Rooftop Access"
+                ),
+                List.of(
+                        "sedative_found", "morgan_under_watch"
+                ),
+                "Dr. Morgan"
         );
 
         return new GameSetup(
-                "Detective World", // title
+                "Shadows of Truth",
                 List.of(
-                        "Investigate a mysterious crime scene filled with clues and red herrings.",
-                        "Interview suspicious characters while gathering evidence to piece together the truth.",
-                        "Unravel a complex web of deceit that leads to unexpected twists."
+                        "A second body turns up — another investigator.",
+                        "Fear spreads among the team. Who’s next?",
+                        "The deeper they dig, the closer they get to the killer’s mask."
                 ),
                 options,
                 messages,
                 gameState
         );
     }
+
 
 
     // *****************     PRIVATE METHODS     *********************
