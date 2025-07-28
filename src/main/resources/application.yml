@@ -3,10 +3,10 @@ spring:
     name: ai-detective
 
 
-  datasource:
-    url: jdbc:postgresql://localhost:5432/ai_detective
-    username: bohdanshraier
-    password:
+#  datasource:
+#    url: jdbc:postgresql://localhost:5432/ai_detective
+#    username: bohdanshraier
+#    password: 1234
   jpa:
     hibernate:
       ddl-auto: none
