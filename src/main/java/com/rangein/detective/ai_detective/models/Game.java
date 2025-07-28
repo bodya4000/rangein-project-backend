@@ -1,13 +1,15 @@
 package com.rangein.detective.ai_detective.models;
 
-import com.rangein.detective.ai_detective.dtos.game.MessageDto;
-import com.rangein.detective.ai_detective.enums.GameRole;
+import com.rangein.detective.ai_detective.dtos.models.game.GameState;
+import com.rangein.detective.ai_detective.dtos.models.game.chars.DbCharacter;
+import com.rangein.detective.ai_detective.enums.GameResult;
 import com.rangein.detective.ai_detective.utils.StringListConverter;
 import org.hibernate.annotations.ColumnTransformer;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -16,6 +18,7 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.Type;
+import com.vladmihalcea.hibernate.type.json.JsonType;
 
 
 @Entity
@@ -30,6 +33,7 @@ public class Game {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "uuid2")
+
     private String gameId;
 
     @ManyToOne
@@ -37,7 +41,8 @@ public class Game {
     private User user;
 
     @Builder.Default
-    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL,fetch = FetchType.LAZY, orphanRemoval = true)
+    @OrderBy("timestamp DESC")
     private List<Message> messages = new java.util.ArrayList<>();
 
     private String title;
@@ -45,22 +50,28 @@ public class Game {
     @Column(columnDefinition = "jsonb")
     @Convert(converter = StringListConverter.class)
     @ColumnTransformer(write = "?::jsonb")
-    private List<String> story;
+    private List<String> story = new ArrayList<>();
 
-    public String addMessageToHistory(String messageBody, GameRole role) {
-        var messageObj = Message.builder()
-                .message(messageBody)
-                .role(role)
-                .game(this)
-                .build();
-        messages.add(messageObj);
-        return messageObj.getMessageId();
-    }
+    @Column(columnDefinition = "jsonb")
+    @Convert(converter = StringListConverter.class)
+    @ColumnTransformer(write = "?::jsonb")
+    private List<String> options = new ArrayList<>();
 
-    public List<MessageDto> getMessageContext() {
-        return messages.stream()
-                .filter(message -> message.getRole() != GameRole.RULE_MASTER && message.getRole() != GameRole.STORYTELLER)
-                .map(message -> new MessageDto(message.getMessageId(), message.getRole(), message.getMessage()))
-                .toList();
-    }
+    @Column(columnDefinition = "jsonb")
+    @Convert(converter = StringListConverter.class)
+    @ColumnTransformer(write = "?::jsonb")
+    private List<String> dead = new ArrayList<>();
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<DbCharacter> chars = new ArrayList<>();
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private GameState gameState;
+
+    private Boolean finished = false;
+
+    @Enumerated(EnumType.ORDINAL)
+    private GameResult score;
 }

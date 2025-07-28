@@ -14,12 +14,16 @@ import java.time.Instant;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString(exclude = {"game"})
 public class Message {
 
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "uuid2")
     @Id
     private String messageId;
+
+    @Column(nullable = false)
+    private String sender;
 
     private GameRole role;
 
@@ -31,7 +35,5 @@ public class Message {
     @ManyToOne
     @JoinColumn(name = "game_id")
     private Game game;
-
-
 
 }

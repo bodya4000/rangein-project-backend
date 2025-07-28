@@ -1,1 +1,5 @@
-INSERT INTO users (user_id) VALUES ('user-test-1');
+ALTER TABLE users
+    ADD COLUMN username VARCHAR(255),
+    ADD COLUMN sex SMALLINT,
+    ADD COLUMN age INT,
+    ADD COLUMN avatar_colors JSONB;

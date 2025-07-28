@@ -2,10 +2,6 @@ spring:
   application:
     name: ai-detective
 
-  mvc:
-    servlet:
-      path: /api
-
 
   datasource:
     url: jdbc:postgresql://localhost:5432/ai_detective
@@ -14,7 +10,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: true

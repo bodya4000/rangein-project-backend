@@ -1,6 +1,7 @@
 package com.rangein.detective.ai_detective.repositories.game;
 
-import com.rangein.detective.ai_detective.dtos.game.MessageDto;
+import com.rangein.detective.ai_detective.dtos.repositories.MessageDto;
+import com.rangein.detective.ai_detective.dtos.repositories.MessageWithIdDto;
 import com.rangein.detective.ai_detective.enums.GameRole;
 import com.rangein.detective.ai_detective.models.Game;
 import com.rangein.detective.ai_detective.models.Message;
@@ -19,15 +20,15 @@ public class CustomMessageRepositoryImpl implements CustomMessageRepository {
 
     @Override
     @Transactional
-    public MessageDto saveMessageToGame(String message, GameRole gameRole,  Game game) {
+    public MessageWithIdDto saveMessageToGame(String message, String sender, Game game) {
         var messageEntity = Message.builder()
                 .message(message)
-                .role(gameRole)
+                .sender(sender)
                 .timestamp(Instant.now())
                 .game(game)
                 .build();
         entityManager.persist(messageEntity);
         entityManager.flush();
-        return new MessageDto(messageEntity.getMessageId(), messageEntity.getRole(), messageEntity.getMessage());
+        return new MessageWithIdDto(messageEntity.getMessageId(), messageEntity.getSender(), messageEntity.getMessage());
     }
 }
