@@ -10,20 +10,18 @@ public class AiConstants {
 startgame
 makenewdetectiveworld
 replyjson
-{t:s,p:[s],o:[s],m:[{who:s,m:s}],g:{result:{finished:false,ok:false,m:s,dead:[s]},events:[s],turn:n,scene:s,"chars":[{"name":str,"gender":m/f,"opinion":str,"opinionLong":str,"relations":{charName:str}}],inv:[s],obj:[s],loc:[s],flags:[s],culprit:s}}
+{t:s,p:[s],o:[s],m:[{who:s,m:s}],g:{result:{finished:bool,ok:bool,m:str,dead:[str]},events:[str],turn:int,scene:str,npcs:[{name:str,gender:m/f,opinion:str,opinionLong:str,relations:{charName:str}}],objectiveness:[str],locations:[str],flags:[str],mafia:str,accusationWeight:{npcName:int},reasoning:[str]}}
 rules
 t3w
-p = 3–5 items, each 20–30 words
+p = 3–5 items, each 30–40 words
 o3x≤3w quick player option
 m fromeachplayer
-g.result.finished=falsestart
+g.result.finished=false start
 g.result.ok=true
-g.result.mempty
+g.result.m empty
 g.result.dead[]
 tn0
-einvobjlocflags[]
-chars2-4w/basichp100op0
-culprit=oneofchars
+mafie=oneofnpcs
 """;
 
     public static final String MESSAGE_PROMPT = """
