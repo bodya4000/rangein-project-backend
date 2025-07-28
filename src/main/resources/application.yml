@@ -22,7 +22,7 @@ spring:
     locations: classpath:db/migration
     url: jdbc:postgresql://localhost:5432/ai_detective
     user: bohdanshraier
-    password:
+    password: 1234
 
 
 gemini:
