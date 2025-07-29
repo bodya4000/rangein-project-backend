@@ -9,19 +9,24 @@ public class AiConstants {
     public static final String START_PROMPT = """
 startgame
 makenewdetectiveworld
-replyjson
-{t:s,p:[s],o:[s],m:[{who:s,m:s}],g:{result:{finished:bool,ok:bool,m:str,dead:[str]},events:[str],turn:int,scene:str,npcs:[{name:str,gender:m/f,opinion:str,opinionLong:str,relations:{charName:str}}],objectiveness:[str],locations:[str],flags:[str],mafia:str,accusationWeight:{npcName:int},reasoning:[str]}}
+{t:s,p:[s],o:[s],m:[{who:npcsName,m:s}],g:{result:{finished:bool,ok:bool,m:str,dead:[str]},events:[str],turn:int,scene:str,npcs:[{name:str,gender:m/f,opinion:str,opinionLong:str,relations:{charName:str}}],objectiveness:[str],locations:[str],flags:[str],mafia:str,accusationWeight:{npcName:int},reasoning:[str]}}
 rules
-t3w
+t title should be laconic max 3 words and emotional
 p = 3–5 items, each 30–40 words
 o3x≤3w quick player option
-m fromeachplayer
-g.result.finished=false start
+m: multiple messages allowed; last must address player by name or role; must not be empty; player must not be sender
+messages are only from npcs. No narrator! And No Player!
+dont change npcs names. always full name
+Do not include player's input messages in mg.result.finished=false start
 g.result.ok=true
 g.result.m empty
 g.result.dead[]
 tn0
 mafie=oneofnpcs
+accusationWeight values should be mostly 1 or 0
+respond only json
+no narrator
+no else except json i asked
 """;
 
     public static final String MESSAGE_PROMPT = """
@@ -46,6 +51,9 @@ pick one NPC from g.npcs who is not g.mafia or user or not in g.result.dead list
 add picked npc name to g.res.dead
 remove them from further m[].who
 make every other NPC react emotionally to their death
+npc must not tell who is killer. it's a secret that hast be resolved
+killer is mafia
+and most alive npcs agreed and know who is mafia killer then game solved and should be g.res.finished = true and g.res.ok = true
 update their opinions
 add a new event to g.events describing the kill
 add info message for user in result.m
@@ -55,6 +63,8 @@ exp: if dead=["jake"] that means you jake already dead and you need to pick "and
 All emotional reactions to death must be based only on newly killed NPCs in this turn, not on already dead ones in g.result.dead.
             
 Opinions change based on:
+there're always 3 of them and 3 words each. list cannot be empty.
+all ways action that helps logically move on with investigation
 dialogue tone kind rude
 helpful suggestions
 good logic
