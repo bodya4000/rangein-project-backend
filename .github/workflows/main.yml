@@ -43,13 +43,29 @@ jobs:
         run: |
           echo "${{ secrets.EC2_PEM }}" > mac.pem
           chmod 600 mac.pem
-
-      - name: Pull image on EC2 via SSH
+      
+      - name: Login to Docker on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i mac.pem ec2-user@${{ secrets.EC2_HOST }} << EOF
-            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-            docker pull bodya4000/ai-backend:0.0.0.${{ github.run_number }}-dev
-            docker stop ai-backend || true
-            docker rm ai-backend || true
-            docker run -d --name ai-backend -p 8080:8080 bodya4000/ai-backend:0.0.0.${{ github.run_number }}-dev
-          EOF
+          ssh -o StrictHostKeyChecking=no -i mac.pem ${{ secrets.EC2_HOST }} \
+            "echo '${{ secrets.DOCKERHUB_TOKEN }}' | docker login -u '${{ secrets.DOCKERHUB_USERNAME }}' --password-stdin"
+      
+      - name: Pull image on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i mac.pem ${{ secrets.EC2_HOST }} \
+            "docker pull '${{ secrets.DOCKERHUB_USERNAME }}/ai-backend:0.0.0.${{ github.run_number }}-dev'"
+      
+      - name: Stop existing container on EC2 (if exists)
+        run: |
+          ssh -o StrictHostKeyChecking=no -i mac.pem ${{ secrets.EC2_HOST }} \
+            "docker stop ai-backend || true"
+      
+      - name: Remove existing container on EC2 (if exists)
+        run: |
+          ssh -o StrictHostKeyChecking=no -i mac.pem ${{ secrets.EC2_HOST }} \
+            "docker rm ai-backend || true"
+      
+      - name: Run container on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i mac.pem ${{ secrets.EC2_HOST }} \
+            "docker run -d --name ai-backend -p 8080:8080 '${{ secrets.DOCKERHUB_USERNAME }}/ai-backend:0.0.0.${{ github.run_number }}-dev'"
+
