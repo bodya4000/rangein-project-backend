@@ -1,0 +1,46 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15
+    container_name: ai-backend-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ai_detective
+      POSTGRES_USER: bohdanshraier
+      POSTGRES_PASSWORD: 1234
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - net
+
+  app:
+    image: ai-backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-backend
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/ai_detective
+      SPRING_DATASOURCE_USERNAME: bohdanshraier
+      SPRING_DATASOURCE_PASSWORD: 1234
+      SPRING_FLYWAY_URL: jdbc:postgresql://db:5432/ai_detective
+      SPRING_FLYWAY_USER: bohdanshraier
+      SPRING_FLYWAY_PASSWORD: 1234
+    networks:
+      - net
+
+
+volumes:
+  postgres_data:
+
+networks:
+  net:

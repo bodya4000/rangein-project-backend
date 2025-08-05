@@ -6,7 +6,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/ai_detective
     username: bohdanshraier
-    password:
+    password: 1234
   jpa:
     hibernate:
       ddl-auto: none
@@ -17,13 +17,11 @@ spring:
     open-in-view: false
 
   flyway:
-
     enabled: true
     locations: classpath:db/migration
     url: jdbc:postgresql://localhost:5432/ai_detective
     user: bohdanshraier
-    password:
-
+    password: 1234
 
 gemini:
   api-url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent

@@ -25,7 +25,7 @@ public class AiService {
 //    }
 
     public GameSetup setupStory() {
-        return openAiPromptService.setupCrimeStoryMock();
+        return openAiPromptService.setupCrimeStory();
     }
 
 
