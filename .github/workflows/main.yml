@@ -41,12 +41,12 @@ jobs:
     steps:
       - name: Save PEM to file
         run: |
-          echo "${{ secrets.EC2_PEM }}" > key.pem
-          chmod 600 key.pem
+          echo "${{ secrets.EC2_PEM }}" > mac.pem
+          chmod 600 mac.pem
 
       - name: Pull image on EC2 via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.EC2_HOST }} << EOF
+          ssh -o StrictHostKeyChecking=no -i mac.pem ec2-user@${{ secrets.EC2_HOST }} << EOF
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
             docker pull bodya4000/ai-backend:0.0.0.${{ github.run_number }}-dev
             docker stop ai-backend || true
