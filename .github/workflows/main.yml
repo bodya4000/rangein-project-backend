@@ -31,8 +31,8 @@ jobs:
 
       - name: Tag and push backend image
         run: |
-          docker tag ai-backend bodya4000/ai-backend:0.0.0.${{ github.run_number }}-dev
-          docker push bodya4000/ai-backend:0.0.0.${{ github.run_number }}-dev
+          docker tag ai-backend "${{ secrets.DOCKERHUB_USERNAME }}"/ai-backend:0.0.0.${{ github.run_number }}-dev
+          docker push "${{ secrets.DOCKERHUB_USERNAME }}"/ai-backend:0.0.0.${{ github.run_number }}-dev
 
   pull-dev-image:
     runs-on: ubuntu-latest
