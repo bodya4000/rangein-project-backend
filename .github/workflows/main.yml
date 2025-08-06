@@ -47,8 +47,7 @@ jobs:
       - name: Login to Docker on EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i mac.pem ${{ secrets.EC2_HOST }} \
-            "echo '${{ secrets.DOCKERHUB_TOKEN }}' | docker login -u '${{ secrets.DOCKERHUB_USERNAME }}' --password-stdin"
-      
+            "bash -c 'echo \"${{ secrets.DOCKERHUB_TOKEN }}\" | docker login -u \"${{ secrets.DOCKERHUB_USERNAME }}\" --password-stdin'"
       - name: Pull image on EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i mac.pem ${{ secrets.EC2_HOST }} \
