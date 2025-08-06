@@ -51,20 +51,20 @@ jobs:
       - name: Pull image on EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i mac.pem ${{ secrets.EC2_HOST }} \
-            "sudo docker pull '${{ secrets.DOCKERHUB_USERNAME }}/ai-backend:0.0.0.${{ github.run_number }}-dev'"
+            "docker pull '${{ secrets.DOCKERHUB_USERNAME }}/ai-backend:0.0.0.${{ github.run_number }}-dev'"
       
       - name: Stop existing container on EC2 (if exists)
         run: |
           ssh -o StrictHostKeyChecking=no -i mac.pem ${{ secrets.EC2_HOST }} \
-            "sudo docker stop ai-backend || true"
+            "docker stop ai-backend || true"
       
       - name: Remove existing container on EC2 (if exists)
         run: |
           ssh -o StrictHostKeyChecking=no -i mac.pem ${{ secrets.EC2_HOST }} \
-            "sudo docker rm ai-backend || true"
+            "docker rm ai-backend || true"
       
       - name: Run container on EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i mac.pem ${{ secrets.EC2_HOST }} \
-            "sudo docker run -d --name ai-backend -p 8080:8080 '${{ secrets.DOCKERHUB_USERNAME }}/ai-backend:0.0.0.${{ github.run_number }}-dev'"
+            "docker run -d --name ai-backend -p 8080:8080 '${{ secrets.DOCKERHUB_USERNAME }}/ai-backend:0.0.0.${{ github.run_number }}-dev'"
 
