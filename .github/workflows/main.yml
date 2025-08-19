@@ -52,11 +52,12 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i mac.pem ${{ secrets.EC2_HOST }} \
             "docker pull '${{ secrets.DOCKERHUB_USERNAME }}/ai-backend:0.0.0.${{ github.run_number }}-dev'"
-      
-      - name: Stop existing container on EC2 (if exists)
+
+      - name: Free port 8080 if busy
         run: |
           ssh -o StrictHostKeyChecking=no -i mac.pem ${{ secrets.EC2_HOST }} \
-            "docker stop ai-backend || true"
+            "docker ps -q --filter 'publish=8080' | xargs -r docker stop && \
+             docker ps -aq --filter 'publish=8080' | xargs -r docker rm || true"
       
       - name: Remove existing container on EC2 (if exists)
         run: |
