@@ -1,6 +1,6 @@
 package com.rangein.detective.ai_detective.services;
 
-import com.rangein.detective.ai_detective.contants.Colors;
+import com.rangein.detective.ai_detective.constants.Colors;
 import com.rangein.detective.ai_detective.dtos.base.PageDto;
 import com.rangein.detective.ai_detective.dtos.controllers.*;
 import com.rangein.detective.ai_detective.dtos.models.game.GameSetup;
@@ -44,10 +44,27 @@ public class GameService {
     private final AiService aiService;
 
     @Transactional
+    public Optional<GameResponseDto> getGame(String userId) {
+        Optional<User> user = userRepository.findAllByIdWithGames(userId);
+        if (user.isPresent()) {
+            List<Game> games = user.get().getGame();
+            if (games.isEmpty()) return  Optional.empty();
+            Game game = games.getFirst();
+            return Optional.of(new GameResponseDto(
+                    game.getGameId(),
+                    game.getTitle(),
+                    game.getStory(),
+                    game.getOptions()
+            ));
+        }
+        return Optional.empty();
+    }
+
+
+    @Transactional
     @SneakyThrows
     public GameResponseDto setup(String userId) {
         User user = userRepository.findAllByIdWithGames(userId).orElseThrow();
-
         Game game = user.getGame().isEmpty()
                 ? createGame(user)
                 : user.getGame().getFirst();
@@ -91,12 +108,12 @@ public class GameService {
     @Transactional
     public ReplyMessageDto sendMessage(SendMessageDto request) {
         Game game = gameRepository.findByIdWithUser(request.gameId()).orElseThrow();
-        Optional<ReplyMessageDto> replyMessageDtoOptional = messageValidateService.validateMessage(request.message());
-        if (replyMessageDtoOptional.isPresent()) {
-            System.out.println(replyMessageDtoOptional.get());
-            gameRepository.delete(game);
-            return replyMessageDtoOptional.get();
-        }
+//        Optional<ReplyMessageDto> replyMessageDtoOptional = messageValidateService.validateMessage(request.message());
+//        if (replyMessageDtoOptional.isPresent()) {
+//            System.out.println(replyMessageDtoOptional.get());
+//            gameRepository.delete(game);
+//            return replyMessageDtoOptional.get();
+//        }
 
         MessageDto playerMessage = new MessageDto(game.getUser().getUsername(), request.message());
         boolean shouldKill = game.getGameState().turn() % 2 == 0 && game.getGameState().turn() != 0;

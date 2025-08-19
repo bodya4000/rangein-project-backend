@@ -1,4 +1,4 @@
-package com.rangein.detective.ai_detective.contants;
+package com.rangein.detective.ai_detective.constants;
 
 import java.util.Arrays;
 import java.util.HashMap;

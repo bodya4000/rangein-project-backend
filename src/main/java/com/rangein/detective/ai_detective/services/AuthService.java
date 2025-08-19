@@ -1,6 +1,6 @@
 package com.rangein.detective.ai_detective.services;
 
-import com.rangein.detective.ai_detective.contants.Colors;
+import com.rangein.detective.ai_detective.constants.Colors;
 import com.rangein.detective.ai_detective.dtos.controllers.user.UserResponseDto;
 import com.rangein.detective.ai_detective.dtos.controllers.auth.RegisterDto;
 import com.rangein.detective.ai_detective.exceptions.auth.NoUserException;

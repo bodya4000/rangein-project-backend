@@ -48,7 +48,7 @@ public class MessageValidateService {
             "knob", "knobhead",
             "slag", "scrubber",
             "chink", "spic", "gook", "kike", "wetback", "coon", "dyke",
-            "hell", "bloody", "freak", "freaking", "frig", "frick", "fricking", "shoot", "screw", "heck", "darn", "crud", "butt"
+            "bloody", "freak", "freaking", "frig", "frick", "fricking", "shoot", "screw", "heck", "darn", "crud", "butt"
     );
 
     private static final Map<MessageViolationType, Set<String>> FORBIDDEN_PATTERNS = Map.of(

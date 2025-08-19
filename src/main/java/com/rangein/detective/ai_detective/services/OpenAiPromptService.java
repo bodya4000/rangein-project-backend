@@ -3,7 +3,8 @@ package com.rangein.detective.ai_detective.services;
 import com.google.gson.Gson;
 import com.openai.client.OpenAIClient;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
-import com.rangein.detective.ai_detective.contants.AiConstants;
+import com.rangein.detective.ai_detective.constants.AiConstants;
+import com.rangein.detective.ai_detective.constants.prompt.game.GamePrompt;
 import com.rangein.detective.ai_detective.dtos.models.game.GameResult;
 import com.rangein.detective.ai_detective.dtos.models.game.GameSetup;
 import com.rangein.detective.ai_detective.dtos.models.game.GameState;
@@ -11,6 +12,7 @@ import com.rangein.detective.ai_detective.dtos.models.game.GameUpdate;
 import com.rangein.detective.ai_detective.dtos.models.game.messages.AiCharacterMessage;
 import com.rangein.detective.ai_detective.dtos.models.game.chars.AiCharacter;
 import com.rangein.detective.ai_detective.dtos.services.ai.AiMessageRequest;
+import com.rangein.detective.ai_detective.exceptions.game.OutOfGptTokensExceptions;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -35,23 +37,19 @@ public class OpenAiPromptService {
 //    }
 
 
-    @SneakyThrows
     public GameUpdate talkToAssistant(AiMessageRequest messageRequestDto) {
-        String requestJson = gson.toJson(messageRequestDto);
-        String name = messageRequestDto.d().sender();
-        String prompt = AiConstants.MESSAGE_PROMPT;
-        System.out.println(messageRequestDto);
-        if (messageRequestDto.mafiaShouldKillInThatTurnNewNpc()) {
-            prompt += AiConstants.KILL_PROMPT;
+        try {
+            String finalRequest = GamePrompt.getPrompt(messageRequestDto);
+            System.out.println(finalRequest);
+            String rawResponse = requestMessage(finalRequest);
+            System.out.println(rawResponse);
+            String cleaned = cleanGptResponse(rawResponse);
+            throw new OutOfGptTokensExceptions();
+//            return gson.fromJson(cleaned, GameUpdate.class);
+        } catch (Exception e) {
+            throw new OutOfGptTokensExceptions();
         }
-        String finalRequest = (String.format(prompt, name, requestJson));
-        System.out.println(finalRequest);
-        String rawResponse = requestMessage(finalRequest);
-        System.out.println(rawResponse);
-        String cleaned = cleanGptResponse(rawResponse);
-        GameUpdate aiMessageData = gson.fromJson(cleaned, GameUpdate.class);
-//        System.out.println(aiMessageData);
-        return aiMessageData;
+
     }
 
     public GameUpdate talkToAssistantMock(AiMessageRequest messageRequestDto) {
@@ -92,12 +90,18 @@ public class OpenAiPromptService {
 
     @SneakyThrows
     public GameSetup setupCrimeStory() {
-        String rawResponse = requestMessage(AiConstants.START_PROMPT);
-        System.out.println(rawResponse);
-        String cleaned = cleanGptResponse(rawResponse);
-        GameSetup aiMessageData = gson.fromJson(cleaned, GameSetup.class);
-        System.out.println(aiMessageData);
-        return aiMessageData;
+        try {
+            String rawResponse = requestMessage(AiConstants.START_PROMPT);
+            System.out.println(rawResponse);
+            String cleaned = cleanGptResponse(rawResponse);
+            GameSetup aiMessageData = gson.fromJson(cleaned, GameSetup.class);
+            System.out.println(aiMessageData);
+            throw new OutOfGptTokensExceptions();
+//            return aiMessageData;
+        } catch (Exception e) {
+            throw new OutOfGptTokensExceptions();
+        }
+
     }
 
     public GameSetup setupCrimeStoryMock() {

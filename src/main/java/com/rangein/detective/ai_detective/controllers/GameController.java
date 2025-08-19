@@ -26,9 +26,19 @@ public class GameController {
 
     private final GameService gameService;
 
-    @PostMapping("/users/{userId}")
+    @GetMapping("/users/{userId}")
     public ResponseEntity<GameResponseDto> getUserGame(@PathVariable String userId) {
-        System.out.println("Getting game for user:");
+        var game = gameService.getGame(userId);
+        return game
+                .map(ResponseEntity::ok)
+                .orElseGet(() ->
+                        ResponseEntity
+                                .notFound()
+                                .build());
+    }
+
+    @PostMapping("/users/{userId}")
+    public ResponseEntity<GameResponseDto> createGame(@PathVariable String userId) {
         return ResponseEntity.ok(gameService.setup(userId));
     }
 
