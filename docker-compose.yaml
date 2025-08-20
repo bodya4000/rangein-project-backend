@@ -38,8 +38,20 @@ services:
     networks:
       - net
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    networks:
+      - net
 
 volumes:
+  caddy_data:
   postgres_data:
 
 networks:
