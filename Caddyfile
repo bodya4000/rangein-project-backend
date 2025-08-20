@@ -15,6 +15,6 @@ api-game.rangein.agency {
     }
 
     route /* {
-        reverse_proxy backend:8080
+        reverse_proxy ai-backend:8080
     }
 }
