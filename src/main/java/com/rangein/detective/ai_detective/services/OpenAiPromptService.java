@@ -91,14 +91,12 @@ public class OpenAiPromptService {
     @SneakyThrows
     public GameSetup setupCrimeStory() {
         try {
-            throw new OutOfGptTokensExceptions();
-//            String rawResponse = requestMessage(AiConstants.START_PROMPT);
-//            System.out.println(rawResponse);
-//            String cleaned = cleanGptResponse(rawResponse);
-//            GameSetup aiMessageData = gson.fromJson(cleaned, GameSetup.class);
-//            System.out.println(aiMessageData);
-//            throw new OutOfGptTokensExceptions();
-//            return aiMessageData;
+            String rawResponse = requestMessage(AiConstants.START_PROMPT);
+            System.out.println(rawResponse);
+            String cleaned = cleanGptResponse(rawResponse);
+            GameSetup aiMessageData = gson.fromJson(cleaned, GameSetup.class);
+            System.out.println(aiMessageData);
+            return aiMessageData;
         } catch (Exception e) {
             throw new OutOfGptTokensExceptions();
         }
